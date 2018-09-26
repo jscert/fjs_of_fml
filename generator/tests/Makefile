@@ -1,3 +1,7 @@
+JSEXPLAIN_DIR := ~/git/jsexplain
+#FIXME : Temp def for split
+MOCHA := $(JSEXPLAIN_DIR)/node_modules/mocha/bin/mocha
+
 STDLIB_DIR := ../stdlib_ml
 PPX := -ppx ../monad_ppx.byte
 LIBDIRS := lib $(STDLIB_DIR)
@@ -21,7 +25,7 @@ test_ml: $(LINK_LIBS) $(patsubst %.ml,%.cmo,$(TESTS)) | lib/mocha.cmi
 
 run_test_js: $(TESTS_JS)
 	@echo -e "\n*** Testing JS-generated tests ***\n"
-	@../../node_modules/mocha/bin/mocha -R list $^
+	@$(MOCHA) -R list $^
 
 test_js: $(TESTS_JS)
 

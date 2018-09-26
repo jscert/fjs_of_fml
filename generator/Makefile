@@ -2,7 +2,7 @@ OCAMLBUILD  := ocamlbuild -j 4 -classic-display -use-ocamlfind
 STDLIB_DIR  := stdlib_ml
 EXECUTABLES := main monad_ppx displayed_sources lineof assembly
 OCAMLDEP := ocamldep
-OCAMLDOT_DIR := ../tools/ocamldot
+OCAMLDOT_DIR := ./utils/ocamldot
 OCAMLDOT := $(OCAMLDOT_DIR)/ocamldot
 
 default: byte stdlib
