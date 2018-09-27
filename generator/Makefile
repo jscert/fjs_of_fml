@@ -5,8 +5,8 @@ OCAMLDEP := ocamldep
 OCAMLDOT_DIR := ./utils/ocamldot
 OCAMLDOT := $(OCAMLDOT_DIR)/ocamldot
 
-default: byte stdlib
-all: byte native stdlib
+default: ocamlbuild byte stdlib
+all: ocamlbuild byte native stdlib
 byte:   $(addsuffix .byte,$(EXECUTABLES))
 native: $(addsuffix .native,$(EXECUTABLES))
 
@@ -15,6 +15,9 @@ test: byte stdlib
 
 stdlib:
 	$(MAKE) -C $(STDLIB_DIR)
+
+ocamlbuild :
+	eval $$(opam env)
 
 # Rules
 %.native: FORCE
