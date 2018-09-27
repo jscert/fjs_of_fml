@@ -1,4 +1,4 @@
-JSEXPLAIN_DIR := ~/git/jsexplain
+JSEXPLAIN_DIR := ../../jsexplain
 #FIXME : Temp def for split
 MOCHA := $(JSEXPLAIN_DIR)/node_modules/mocha/bin/mocha
 
