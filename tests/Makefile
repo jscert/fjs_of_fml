@@ -1,7 +1,4 @@
-JSEXPLAIN_DIR := ../../jsexplain
-#FIXME : Temp def for split
-MOCHA := $(JSEXPLAIN_DIR)/node_modules/mocha/bin/mocha
-
+MOCHA := node_modules/mocha/bin/mocha
 STDLIB_DIR := ../stdlib_ml
 PPX := -ppx ../monad_ppx.byte
 LIBDIRS := lib $(STDLIB_DIR)
@@ -23,9 +20,12 @@ run_test_ml:
 test_ml: $(LINK_LIBS) $(patsubst %.ml,%.cmo,$(TESTS)) | lib/mocha.cmi
 	ocamlfind ocamlc -package alcotest -linkpkg -g $(LIBS) $^ -o $@
 
-run_test_js: $(TESTS_JS)
+$(MOCHA) : package.json
+	npm install
+
+run_test_js: $(TESTS_JS) $(MOCHA)
 	@echo -e "\n*** Testing JS-generated tests ***\n"
-	@$(MOCHA) -R list $^
+	@$(MOCHA) -R list $(TESTS_JS)
 
 test_js: $(TESTS_JS)
 
@@ -59,7 +59,7 @@ lib/mocha.cmo: lib/mocha.ml lib/mocha.cmi
 	ocamlc -c -g $(REPLACE_STDLIB) $(LIBS) $< -o $@
 
 clean:
-	rm -rf *.cmi *.cmo test_ml _build lib/*.cmi lib/*cmo *.unlog.js *.log.js *.token.js *.as.js
+	rm -rf *.cmi *.cmo test_ml _build lib/*.cmi lib/*cmo *.unlog.js *.log.js *.token.js *.as.js package-lock.json node_modules
 
 .PRECIOUS: %.js %.unlog.js
 .NOTPARALLEL:
