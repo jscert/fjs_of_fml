@@ -1,5 +1,5 @@
 SRC_DIR := src
-OCAMLBUILD  := ocamlbuild -j 4 -classic-display -use-ocamlfind -Is $(SRC_DIR)
+OCAMLBUILD  := ocamlbuild -j 4 -classic-display -use-ocamlfind -Is $(SRC_DIR) -no-hygiene
 STDLIB_DIR  := $(SRC_DIR)/stdlib_ml
 TESTS_DIR  := $(SRC_DIR)/tests
 EXECUTABLES := main monad_ppx displayed_sources lineof assembly
