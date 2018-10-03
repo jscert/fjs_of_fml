@@ -1,6 +1,7 @@
 MOCHA := node_modules/mocha/bin/mocha
 STDLIB_DIR := ../stdlib_ml
-PPX := -ppx ../monad_ppx.byte
+BIN_DIR := ../..
+PPX := -ppx $(BIN_DIR)/monad_ppx.byte
 LIBDIRS := lib $(STDLIB_DIR)
 LIBS := $(PPX) $(foreach lib,$(LIBDIRS),-I $(lib))
 REPLACE_STDLIB := -nopervasives -nostdlib -open Stdlib
@@ -36,18 +37,18 @@ shadow.cmo: shadow_include.cmo
 shadow.unlog.as.js: shadow_include.unlog.js
 
 # Pattern rules
-%.unlog.js: %.ml ../main.byte ../monad_ppx.byte
-	../main.byte -mode unlog $(LIBS) $<
+%.unlog.js: %.ml $(BIN_DIR)/main.byte $(BIN_DIR)/monad_ppx.byte
+	$(BIN_DIR)/main.byte -mode unlog $(LIBS) $<
 
 %.log.js: %.ml ../main.byte ../monad_ppx.byte
-	../main.byte -mode log $(LIBS) $<
+	$(BIN_DIR)/main.byte -mode log $(LIBS) $<
 
 %.token.js: %.ml ../main.byte ../monad_ppx.byte
-	../main.byte -mode token $(LIBS) $<
+	$(BIN_DIR)/main.byte -mode token $(LIBS) $<
 
 # $$^ expands to all previously defined dependencies for the given file
 %.as.js: $(patsubst %.cmo,%.js,$(LINK_LIBS)) Compare.js $$^ %.js
-	../assembly.byte -o $@ $^
+	$(BIN_DIR)/assembly.byte -o $@ $^
 
 lib/mocha.cmi: lib/mocha.mli
 	ocamlfind ocamlc -package alcotest -c $< -o $@

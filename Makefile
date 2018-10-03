@@ -1,9 +1,11 @@
-OCAMLBUILD  := ocamlbuild -j 4 -classic-display -use-ocamlfind
-STDLIB_DIR  := stdlib_ml
+SRC_DIR := src
+OCAMLBUILD  := ocamlbuild -j 4 -classic-display -use-ocamlfind -Is $(SRC_DIR)
+STDLIB_DIR  := $(SRC_DIR)/stdlib_ml
+TESTS_DIR  := $(SRC_DIR)/tests
 EXECUTABLES := main monad_ppx displayed_sources lineof assembly
 OCAMLDEP := ocamldep
 
-OCAMLDOT_DIR := ./utils/ocamldot
+OCAMLDOT_DIR := $(SRC_DIR)/utils/ocamldot
 OCAMLDOT := $(OCAMLDOT_DIR)/ocamldot
 
 default: ocamlbuild byte stdlib
@@ -12,7 +14,7 @@ byte:   $(addsuffix .byte,$(EXECUTABLES))
 native: $(addsuffix .native,$(EXECUTABLES))
 
 test: byte stdlib
-	$(MAKE) -C tests test
+	$(MAKE) -C $(TESTS_DIR) test
 
 stdlib:
 	$(MAKE) -C $(STDLIB_DIR)
@@ -46,7 +48,7 @@ clean:
 	bash -c "rm -f .ocamldebug .depend archi_generator.pdf"
 	$(MAKE) -C $(STDLIB_DIR) clean
 	$(MAKE) -C $(OCAMLDOT_DIR) clean
-	$(MAKE) -C tests clean
+	$(MAKE) -C $(TESTS_DIR) clean
 
 .PHONY: default all byte native stdlib debug clean
 
