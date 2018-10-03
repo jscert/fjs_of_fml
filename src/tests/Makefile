@@ -37,14 +37,14 @@ shadow.cmo: shadow_include.cmo
 shadow.unlog.as.js: shadow_include.unlog.js
 
 # Pattern rules
-%.unlog.js: %.ml $(BIN_DIR)/main.byte $(BIN_DIR)/monad_ppx.byte
-	$(BIN_DIR)/main.byte -mode unlog $(LIBS) $<
+%.unlog.js: %.ml $(BIN_DIR)/fjs_of_fml.byte $(BIN_DIR)/monad_ppx.byte
+	$(BIN_DIR)/fjs_of_fml.byte -mode unlog $(LIBS) $<
 
-%.log.js: %.ml ../main.byte ../monad_ppx.byte
-	$(BIN_DIR)/main.byte -mode log $(LIBS) $<
+%.log.js: %.ml ../fjs_of_fml.byte ../monad_ppx.byte
+	$(BIN_DIR)/fjs_of_fml.byte -mode log $(LIBS) $<
 
-%.token.js: %.ml ../main.byte ../monad_ppx.byte
-	$(BIN_DIR)/main.byte -mode token $(LIBS) $<
+%.token.js: %.ml ../fjs_of_fml.byte ../monad_ppx.byte
+	$(BIN_DIR)/fjs_of_fml.byte -mode token $(LIBS) $<
 
 # $$^ expands to all previously defined dependencies for the given file
 %.as.js: $(patsubst %.cmo,%.js,$(LINK_LIBS)) Compare.js $$^ %.js
