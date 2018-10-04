@@ -1,15 +1,15 @@
 #
 # sample Makefile for Objective Caml
 # Copyright (C) 2001 Jean-Christophe FILLIATRE
-# 
+#
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Library General Public
 # License version 2, as published by the Free Software Foundation.
-# 
+#
 # This library is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# 
+#
 # See the GNU Library General Public License version 2 for more details
 # (enclosed in the file LGPL).
 
@@ -33,9 +33,12 @@ OCAMLVERSION = @OCAMLVERSION@
 OCAMLWEB = @OCAMLWEB@
 OCAMLWIN32 = @OCAMLWIN32@
 EXE = @EXE@
+OPAM = @OPAM@
 OPAMBINDIR = @OPAMBINDIR@
+OPAMLIBDIR = @OPAMLIBDIR@
 OCAMLBUILD = @OCAMLBUILD@
 OCAMLFIND = @OCAMLFIND@
+OPAM = @OPAM@
 
 INCLUDES =
 BFLAGS =
@@ -49,16 +52,24 @@ OCAMLBUILDCMD  := $(OCAMLBUILD) -j 4 -classic-display -use-ocamlfind -Is $(SRC_D
 STDLIB_DIR  := $(SRC_DIR)/stdlib_ml
 TESTS_DIR  := $(SRC_DIR)/tests
 EXECUTABLES := fjs_of_fml monad_ppx displayed_sources lineof assembly
+BYTES := $(addsuffix .byte,$(EXECUTABLES))
+NATIVES := $(addsuffix .native,$(EXECUTABLES))
 OCAMLDEP := ocamldep
 OCAMLDOT_DIR := $(SRC_DIR)/utils/ocamldot
 OCAMLDOT := $(OCAMLDOT_DIR)/ocamldot
+
+FJS_OPAM_LIB_DIR := $(OPAMLIBDIR)/fjs_of_fml
+FJS_OPAM_STD_LIB := $(FJS_OPAM_LIB_DIR)/stdlib_ml
+FJS_OPAM_TESTS_DIR := $(FJS_OPAM_LIB_DIR)/tests
+BYTES_OPAM := $(addprefix $(OPAMBINDIR)/,$(BYTES))
+NATIVES_OPAM := $(addprefix $(OPAMBINDIR)/,$(NATIVES))
 
 ######################################
 
 default: ocamlbuild byte stdlib
 all: ocamlbuild byte native stdlib
-byte:   $(addsuffix .byte,$(EXECUTABLES))
-native: $(addsuffix .native,$(EXECUTABLES))
+byte: $(BYTES)
+native: $(NATIVES)
 
 test: byte stdlib
 	$(MAKE) -C $(TESTS_DIR) test
@@ -90,14 +101,31 @@ archi : ocamldot
 	$(OCAMLDEP) *.ml > .depend
 	cat .depend | $(OCAMLDOT) | dot -Tpdf > archi_generator.pdf
 
+# Opam Install
+opam_install : all
+ifeq ($(OPAM),opam)
+  ifneq ($(OPAMBINDIR),)
+    ifneq ($(OPAMLIBDIR),)
+	@cp $(BYTES) $(NATIVES) $(OPAMBINDIR)
+	@mkdir -p $(FJS_OPAM_LIB_DIR)
+	@mkdir -p $(FJS_OPAM_STD_LIB)
+	 @cp $(STDLIB_DIR)/*.cm* $(FJS_OPAM_STD_LIB)
+	@mkdir -p $(FJS_OPAM_TESTS_DIR)
+    endif
+  endif
+endif
+
+# Clean
 clean:
 	$(OCAMLBUILD) -clean
-	bash -c "rm -f .ocamldebug .depend archi_generator.pdf"
+	rm -f .ocamldebug .depend archi_generator.pdf
+	rm -f $(BYTES_OPAM) $(NATIVES_OPAM)
+	rm -rf $(FJS_OPAM_LIB_DIR) 
 	$(MAKE) -C $(STDLIB_DIR) clean
 	$(MAKE) -C $(OCAMLDOT_DIR) clean
 	$(MAKE) -C $(TESTS_DIR) clean
 
-.PHONY: default all byte native stdlib debug clean
+.PHONY: default all byte native stdlib debug clean ocamldot archi opam_install
 
 FORCE: # Force rebuilds of OCaml targets via ocamlbuild, the FORCE file must not exist.
 .NOTPARALLEL: # Only one ocamlbuild can be run at a time

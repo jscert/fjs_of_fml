@@ -1,16 +1,16 @@
 #
 # autoconf input for Objective Caml programs
 # Copyright (C) 2001 Jean-Christophe Filliâtre
-#   from a first script by Georges Mariano 
-# 
+#   from a first script by Georges Mariano
+#
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Library General Public
 # License version 2, as published by the Free Software Foundation.
-# 
+#
 # This library is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# 
+#
 # See the GNU Library General Public License version 2 for more details
 # (enclosed in the file LGPL).
 
@@ -19,7 +19,7 @@
 #   OCAMLC        "ocamlc" if present in the path, or a failure
 #                 or "ocamlc.opt" if present with same version number as ocamlc
 #   OCAMLOPT      "ocamlopt" (or "ocamlopt.opt" if present), or "no"
-#   OCAMLBEST     either "byte" if no native compiler was found, 
+#   OCAMLBEST     either "byte" if no native compiler was found,
 #                 or "opt" otherwise
 #   OCAMLDEP      "ocamldep"
 #   OCAMLLEX      "ocamllex" (or "ocamllex.opt" if present)
@@ -31,7 +31,7 @@
 #   EXE           ".exe" if OCAMLWIN32=yes, "" otherwise
 #   OCAMLBUILD    ocamlbuild
 
-# check for one particular file of the sources 
+# check for one particular file of the sources
 # ADAPT THE FOLLOWING LINE TO YOUR SOURCES!
 AC_INIT(src/fjs_of_fml.ml)
 
@@ -51,11 +51,17 @@ echo "ocaml library path is $OCAMLLIB"
 
 # TODO/FIXME check opam
 # if opam is not present local build
-#AC_CHECK_PROG(opam)
-  # check for OPAMBIN dir
+AC_CHECK_PROG(OPAM, opam, opam, no)
+if test "OPAM" = no ; then
+  echo "Cannot find opam"
+  OPAMBINDIR=
+  OPAMLIBDIR=
+else
   OPAMBINDIR=`opam config var bin`
   echo "opam bin path is $OPAMBINDIR"
-
+  OPAMLIBDIR=`opam config var lib`
+  echo "opam lib path is $OPAMLIBDIR"
+fi
 
 # then we look for ocamlopt; if not present, we issue a warning
 # if the version is not the same, we also discard it
@@ -163,6 +169,8 @@ AC_SUBST(OCAMLWEB)
 AC_SUBST(OCAMLWIN32)
 AC_SUBST(EXE)
 AC_SUBST(OPAMBINDIR)
+AC_SUBST(OPAMLIBDIR)
+AC_SUBST(OPAM)
 
 # Finally create the Makefile from Makefile.in
 AC_OUTPUT(Makefile)
