@@ -32,3 +32,6 @@ depends: [
   "alcotest" {test}
   "conf-autoconf" {build}
 ]
+pin-depends: [
+ [JS_Parser  "https://github.com/resource-reasoning/JS_Parser.git#v0.1.0"]
+]
