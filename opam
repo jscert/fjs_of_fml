@@ -16,7 +16,7 @@ available: [ocaml-version >= "4.04.0" & ocaml-version < "4.05"]
 build: [
        ["autoconf"]
        ["./configure" "-prefix" "%{prefix}%"]
-       [make]
+       [make opam_install]
 ]
 remove: [
         ["autoconf"]
