@@ -14,7 +14,7 @@ dev-repo: "https://github.com/jscert/fjs_of_fml.git"
 available: [ocaml-version >= "4.04.0" & ocaml-version < "4.05"]
 build: [
        ["autoconf"]
-       ["./configure" "-prefix" "%{prefix}%"]
+       ["./configure"]
        [make]
 ]
 install: [
@@ -22,13 +22,15 @@ install: [
 ]
 remove: [
         ["autoconf"]
-        ["./configure" "-prefix" "%{prefix}%"]
-	[make "uninstall" "MANDIR=%{man}%"]
+        ["./configure"]
+	[make "opam_uninstall"]
 ]
 build-test: [
   [make test]
 ]
-
+pin-depends: [
+ [JS_Parser  https://github.com/resource-reasoning/JS_Parser.git#v0.1.0]
+]
 depends: [
   "ocamlfind" {build}
   "alcotest" {test}
