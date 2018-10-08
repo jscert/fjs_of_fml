@@ -1,4 +1,4 @@
-&opam-version: "2"
+opam-version: "2"
 name: "fjs_of_fml"
 version: "1.0~dev"
 maintainer: "Thomas Wood <thomas.wood09@imperial.ac.uk>"
@@ -11,19 +11,27 @@ homepage: "http://jscert.org/"
 bug-reports: "https://github.com/jscert/fjs_of_fml/issues"
 license: "BSD 3-clause"
 dev-repo: "https://github.com/jscert/fjs_of_fml.git"
-
 available: [ocaml-version >= "4.04.0" & ocaml-version < "4.05"]
 build: [
-  [make]
+       ["autoconf"]
+       ["./configure" "-prefix" "%{prefix}%"]
+]
+install: [
+         [make "opam_install"]
+]
+remove: [
+        ["autoconf"]
+        ["./configure" "-prefix" "%{prefix}%"]
+	[make "clean"]
 ]
 build-test: [
   [make test]
 ]
-pin-depends: [
- JS_Parser : "https://github.com/resource-reasoning/JS_Parser.git#v0.1.0"
-]
 depends: [
   "ocamlfind" {build}
   "alcotest" {test}
-  "JS_Parser" { >= "0.1" & < "0.2" }
+  "conf-autoconf" {build}
+]
+pin-depends: [
+ ["JS_Parser.dev" "git://github.com/resource-reasoning/JS_Parser.git#v0.1.0"]
 ]
