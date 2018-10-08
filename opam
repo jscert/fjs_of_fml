@@ -27,9 +27,6 @@ remove: [
 build-test: [
   [make test]
 ]
-pin-depends: [
- [JS_Parser  https://github.com/resource-reasoning/JS_Parser.git#v0.1.0]
-]
 depends: [
   "ocamlfind" {build}
   "alcotest" {test}
