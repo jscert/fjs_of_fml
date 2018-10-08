@@ -11,12 +11,17 @@ homepage: "http://jscert.org/"
 bug-reports: "https://github.com/jscert/fjs_of_fml/issues"
 license: "BSD 3-clause"
 dev-repo: "https://github.com/jscert/fjs_of_fml.git"
-
+depexts: [ [ autoconf]  ]
 available: [ocaml-version >= "4.04.0" & ocaml-version < "4.05"]
 build: [
-  [autoconf]
-  ["./configure"]
-  [make all]
+       ["autoconf"]
+       ["./configure" "-prefix" "%{prefix}%"]
+       [make]
+]
+remove: [
+        ["autoconf"]
+        ["./configure" "-prefix" "%{prefix}%"]
+	[make "uninstall" "MANDIR=%{man}%"]
 ]
 build-test: [
   [make test]
@@ -27,4 +32,5 @@ pin-depends: [
 depends: [
   "ocamlfind" {build}
   "alcotest" {test}
+  "conf-autoconf" {build}
 ]
