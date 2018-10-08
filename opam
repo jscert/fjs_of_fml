@@ -22,7 +22,7 @@ install: [
 remove: [
         ["autoconf"]
         ["./configure" "-prefix" "%{prefix}%"]
-	[make "uninstall" "MANDIR=%{man}%"]
+	[make "clean"]
 ]
 build-test: [
   [make test]
