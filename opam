@@ -1,4 +1,4 @@
-&opam-version: "2"
+opam-version: "2"
 name: "fjs_of_fml"
 version: "1.0~dev"
 maintainer: "Thomas Wood <thomas.wood09@imperial.ac.uk>"
