@@ -54,8 +54,10 @@ echo "ocaml library path is $OCAMLLIB"
 AC_CHECK_PROG(OPAM, opam, opam, no)
 if test "OPAM" = no ; then
   AC_MSG_WARN(Cannot find opam, standalone build.)
-  AC_MSG_RESULT(opam bin path is empty : OPAMBINDIR=)
-  AC_MSG_RESULT(opam lib path is empty : OPAMLIBDIR=)
+  OPAMBINDIR=
+  AC_MSG_RESULT(opam bin path is empty : OPAMBINDIR=$OPAMBINDIR)
+  OPAMLIBDIR=
+  AC_MSG_RESULT(opam lib path is empty : OPAMLIBDIR=$OPAMLIBDIR)
 else
   OPAMBINDIR=`opam config var bin`
   AC_MSG_RESULT(opam bin path is $OPAMBINDIR.)
