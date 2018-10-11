@@ -46,6 +46,8 @@ OFLAGS =
 
 ######################################
 
+SRC_JSPARSER := $(opam config var prefix)/.opam-switch/sources/JS_Parser/src
+
 # fjs_of_fml (from original Makefile)
 SRC_DIR := src
 OCAMLBUILDCMD  := $(OCAMLBUILD) -j 4 -classic-display -use-ocamlfind -Is $(SRC_DIR) -no-hygiene
@@ -117,7 +119,6 @@ ifeq ($(OPAM),opam)
 	 @mkdir -p $(FJS_OPAM_STD_LIB)
 	  @cp $(STDLIB_DIR)/*.cm* $(FJS_OPAM_STD_LIB)
 	  @cp $(STDLIB_DIR)/stdlib.js $(FJS_OPAM_STD_LIB)
-	@SRC_JSPARSER = $(opam config var prefix)/.opam-switch/sources/JS_Parser/src
 	@opam config set jsparsersrc $(SRC_JSPARSER) # TODO/FIXME : This is a hack, Opam Install comment
     endif
   endif
