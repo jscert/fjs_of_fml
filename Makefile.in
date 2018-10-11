@@ -102,6 +102,12 @@ archi : ocamldot
 	cat .depend | $(OCAMLDOT) | dot -Tpdf > archi_generator.pdf
 
 # Opam Install
+#
+# As mentionned here : https://opam.ocaml.org/doc/Manual.html#General-syntax
+# "pin-depends" packages are not transitive  and invisible in opam list
+# so even if JS_Parser is needed for this install,
+# jexplain won't be able to find JS_Parser without the javaparsersrc opam variable.
+#
 opam_install : all
 ifeq ($(OPAM),opam)
   ifneq ($(OPAMBINDIR),)
@@ -111,6 +117,8 @@ ifeq ($(OPAM),opam)
 	 @mkdir -p $(FJS_OPAM_STD_LIB)
 	  @cp $(STDLIB_DIR)/*.cm* $(FJS_OPAM_STD_LIB)
 	  @cp $(STDLIB_DIR)/stdlib.js $(FJS_OPAM_STD_LIB)
+	@SRC_JSPARSER = $(opam config var prefix)/.opam-switch/sources/JS_Parser/src
+	@opam config set jsparsersrc $(SRC_JSPARSER) # TODO/FIXME : This is a hack, Opam Install comment
     endif
   endif
 endif

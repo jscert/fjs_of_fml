@@ -24,9 +24,6 @@ remove: [
         ["./configure" "-prefix" "%{prefix}%"]
 	[make "clean"]
 ]
-build-test: [
-  [make test]
-]
 depends: [
   "ocamlfind" {build}
   "alcotest" {test}
