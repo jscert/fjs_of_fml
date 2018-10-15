@@ -28,10 +28,4 @@ depends: [
   "ocamlfind" {build}
   "alcotest" {test}
   "conf-autoconf" {build}
-  "xml-light" {build}
-  "batteries" {build}
-  "yojson" {build}
-]
-pin-depends: [
- ["JS_Parser.dev" "git://github.com/resource-reasoning/JS_Parser.git#v0.1.0"]
 ]
