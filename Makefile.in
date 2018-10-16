@@ -98,8 +98,8 @@ ocamldot :
 	$(MAKE) -C $(OCAMLDOT_DIR)
 
 archi : ocamldot
-	$(OCAMLDEP) *.ml > .depend
-	cat .depend | $(OCAMLDOT) | dot -Tpdf > archi_generator.pdf
+	cd $(SRC_DIR) ; $(OCAMLDEP) *.ml > .depend
+	cat $(SRC_DIR)/.depend | $(OCAMLDOT) | dot -Tpdf > archi_generator.pdf
 
 # Opam Install
 #
@@ -119,7 +119,7 @@ endif
 # Clean
 clean:
 	$(OCAMLBUILD) -clean
-	rm -f .ocamldebug .depend archi_generator.pdf
+	rm -f .ocamldebug $(SRC_DIR)/.depend archi_generator.pdf
 	rm -f $(BYTES_OPAM) $(NATIVES_OPAM)
 	rm -rf $(FJS_OPAM_LIB_DIR) 
 	$(MAKE) -C $(STDLIB_DIR) clean
