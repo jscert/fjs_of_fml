@@ -1,6 +1,6 @@
 opam-version: "2"
 name: "fjs_of_fml"
-version: "1.0~dev"
+version: "0.1
 maintainer: "Thomas Wood <thomas.wood09@imperial.ac.uk>"
 authors: [
   "Arthur Charguéraud <arthur@chargueraud.org>"
