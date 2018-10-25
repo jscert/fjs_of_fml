@@ -46,23 +46,30 @@ OFLAGS =
 
 ######################################
 
-# fjs_of_fml (from original Makefile)
 SRC_DIR := src
+NAME := fjs_of_fml
 OCAMLBUILDCMD  := $(OCAMLBUILD) -j 4 -classic-display -use-ocamlfind -Is $(SRC_DIR) -no-hygiene
 STDLIB_DIR  := $(SRC_DIR)/stdlib_ml
 TESTS_DIR  := $(SRC_DIR)/tests
-EXECUTABLES := fjs_of_fml monad_ppx displayed_sources lineof assembly
+EXECUTABLES := $(NAME) monad_ppx displayed_sources lineof assembly
 BYTES := $(addsuffix .byte,$(EXECUTABLES))
 NATIVES := $(addsuffix .native,$(EXECUTABLES))
 OCAMLDEP := ocamldep
 OCAMLDOT_DIR := $(SRC_DIR)/utils/ocamldot
 OCAMLDOT := $(OCAMLDOT_DIR)/ocamldot
 
-FJS_OPAM_LIB_DIR := $(OPAMLIBDIR)/fjs_of_fml
+FJS_OPAM_LIB_DIR := $(OPAMLIBDIR)/$(NAME)
 FJS_OPAM_STD_LIB := $(FJS_OPAM_LIB_DIR)/stdlib_ml
 FJS_OPAM_TESTS_DIR := $(FJS_OPAM_LIB_DIR)/tests
 BYTES_OPAM := $(addprefix $(OPAMBINDIR)/,$(BYTES))
 NATIVES_OPAM := $(addprefix $(OPAMBINDIR)/,$(NATIVES))
+
+GIT_REPO := https://github.com/jscert/$(NAME).git
+GIT_BRANCH := spec #TODO/FIXME : Makefile var + shell command
+TMP_DIR := /tmp
+TMP_FJS := $(TMP_DIR)/$(NAME)
+VERSION := 0.1
+TGZ := $(NAME)-$(VERSION).tar.gz
 
 ######################################
 
@@ -116,15 +123,25 @@ ifeq ($(OPAM),opam)
   endif
 endif
 
+package :
+	rm -rf $(TMP_FJS) $(TGZ)
+	mkdir $(TMP_FJS)
+	git clone $(GIT_REPO) $(TMP_FJS)
+	git -C $(TMP_FJS)/ checkout $(GIT_BRANCH)
+	rm -rf $(TMP_FJS)/.git
+	tar -cvzf $(TGZ) -C $(TMP_DIR) $(NAME)
+	md5sum $(TGZ) > $(TGZ).md5sum.txt
+
 # Clean
 clean:
 	$(OCAMLBUILD) -clean
-	rm -f .ocamldebug $(SRC_DIR)/.depend archi_generator.pdf
+	rm -f .ocamldebug $(SRC_DIR)/.depend archi_generator.pdf configure  $(TGZ) $(TGZ).md5sum.txt
 	rm -f $(BYTES_OPAM) $(NATIVES_OPAM)
-	rm -rf $(FJS_OPAM_LIB_DIR) 
+	rm -rf $(FJS_OPAM_LIB_DIR)
 	$(MAKE) -C $(STDLIB_DIR) clean
 	$(MAKE) -C $(OCAMLDOT_DIR) clean
 	$(MAKE) -C $(TESTS_DIR) clean
+	rm -rf autom4te.cache  config.log  config.status 
 
 .PHONY: default all byte native stdlib debug clean ocamldot archi opam_install
 
