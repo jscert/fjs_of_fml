@@ -7,11 +7,7 @@ configure
 config.log
 config.status
 _build
-assembly.byte
-displayed_sources.byte
-fjs_of_fml.byte
-lineof.byte
-monad_ppx.byte
+*.byte
 src/stdlib_ml/stdlib.cmi
 src/stdlib_ml/stdlib.cmo
 *.tar.gz
@@ -20,4 +16,5 @@ src/utils/ocamldot/ocamldot
 src/utils/ocamldot/ocamldot.cmi
 src/utils/ocamldot/ocamldot.cmo
 src/utils/ocamldot/ocamldot.ml
+src/#*
 

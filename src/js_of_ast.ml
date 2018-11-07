@@ -1,4 +1,4 @@
-(*
+ (*
    Copyright 2017 Inria and Imperial College London
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -340,6 +340,9 @@ let ppf_pat_array id_list array_expr =
 
 let ppf_field_access expr field =
   Printf.sprintf "%s.%s" expr field
+
+let ppf_comment c =
+ Printf.sprintf "/*\n%s\n*/" c
 
 (****************************************************)
 (* Identifier Rewriting *)
@@ -742,6 +745,11 @@ let tuple_binders stupleobj sm pl =
   let (result, _, sm) = List.fold_right (tuple_component_bind stupleobj) pl ([], nb_args - 1, sm) in
   (result, sm)
 
+let ocaml_doc_tags = [ "ocaml.text" ; "ocaml.doc" ]
+let is_doc_attr ({ txt = a; _ }, _) = List.mem a ocaml_doc_tags
+(*let is_doc_expr e = List.exists is_doc_attr e.pexp_attributes*)
+let is_doc_texpr e = List.exists is_doc_attr e.exp_attributes
+
 (****************************************************************)
 (* TRANSLATION *)
 
@@ -944,6 +952,9 @@ and js_of_expression (sm : shadow_map) ctx dest e =
     let sbody = js_of_expression sm newctx Dest_return body in
     let sexp = generate_logged_enter body.exp_loc arg_ids ctx newctx sbody in
     apply_dest' ctx dest (stuplebindings ^ sexp)
+
+  | Texp_apply (f, exp_l) when is_doc_texpr e -> 
+     apply_dest' ctx dest  "caca"
 
   | Texp_apply (f, exp_l) when is_monadic_texpr e ->
       let sl_clean = exp_l
