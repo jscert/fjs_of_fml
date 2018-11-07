@@ -1,7 +1,7 @@
 .depend
 .gitignore
 Makefile
-src/archi_generator.pdf
+archi_generator.pdf
 autom4te.cache
 configure
 config.log
@@ -16,3 +16,8 @@ src/stdlib_ml/stdlib.cmi
 src/stdlib_ml/stdlib.cmo
 *.tar.gz
 *.tar.gz.md5sum.txt
+src/utils/ocamldot/ocamldot
+src/utils/ocamldot/ocamldot.cmi
+src/utils/ocamldot/ocamldot.cmo
+src/utils/ocamldot/ocamldot.ml
+

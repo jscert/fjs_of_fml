@@ -40,10 +40,6 @@ OCAMLBUILD = @OCAMLBUILD@
 OCAMLFIND = @OCAMLFIND@
 OPAM = @OPAM@
 
-INCLUDES =
-BFLAGS =
-OFLAGS =
-
 ######################################
 
 SRC_DIR := src
@@ -54,7 +50,6 @@ TESTS_DIR  := $(SRC_DIR)/tests
 EXECUTABLES := $(NAME) monad_ppx displayed_sources lineof assembly
 BYTES := $(addsuffix .byte,$(EXECUTABLES))
 NATIVES := $(addsuffix .native,$(EXECUTABLES))
-OCAMLDEP := ocamldep
 OCAMLDOT_DIR := $(SRC_DIR)/utils/ocamldot
 OCAMLDOT := $(OCAMLDOT_DIR)/ocamldot
 
@@ -65,7 +60,7 @@ BYTES_OPAM := $(addprefix $(OPAMBINDIR)/,$(BYTES))
 NATIVES_OPAM := $(addprefix $(OPAMBINDIR)/,$(NATIVES))
 
 GIT_REPO := https://github.com/jscert/$(NAME).git
-GIT_BRANCH := spec #TODO/FIXME : Makefile var + shell command
+GIT_BRANCH := $$(git rev-parse --abbrev-ref HEAD)
 TMP_DIR := /tmp
 TMP_FJS := $(TMP_DIR)/$(NAME)
 VERSION := 0.1
@@ -109,7 +104,6 @@ archi : ocamldot
 	cat $(SRC_DIR)/.depend | $(OCAMLDOT) | dot -Tpdf > archi_generator.pdf
 
 # Opam Install
-#
 opam_install : all
 ifeq ($(OPAM),opam)
   ifneq ($(OPAMBINDIR),)
@@ -123,6 +117,7 @@ ifeq ($(OPAM),opam)
   endif
 endif
 
+# Create tgz file and print its md5sum to a md5sum.txt : TODO use it to update opam file
 package :
 	rm -rf $(TMP_FJS) $(TGZ)
 	mkdir $(TMP_FJS)
@@ -135,7 +130,7 @@ package :
 # Clean
 clean:
 	$(OCAMLBUILD) -clean
-	rm -f .ocamldebug $(SRC_DIR)/.depend archi_generator.pdf configure  $(TGZ) $(TGZ).md5sum.txt
+	rm -f .ocamldebug $(SRC_DIR)/.depend $(SRC_DIR)/archi_generator.pdf configure  $(TGZ) $(TGZ).md5sum.txt
 	rm -f $(BYTES_OPAM) $(NATIVES_OPAM)
 	rm -rf $(FJS_OPAM_LIB_DIR)
 	$(MAKE) -C $(STDLIB_DIR) clean
