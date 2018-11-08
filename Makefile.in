@@ -134,8 +134,8 @@ opam_file_update : $(TGZ)
 	cp opam $(OPAM_REPO_GIT)/packages/$(NAME)/$(NAME).$(VERSION)
 
 deploy : opam_file_update
-	@read -p "User ?" FORGE_USER; \
-	scp -p $(TGZ) $$(FORGE_USER)@scm.gforge.inria.fr:/home/groups/jsexplain/htdocs 
+	read -p "User ?" FORGE_USER; \
+	scp -p $(TGZ) $$FORGE_USER@scm.gforge.inria.fr:/home/groups/jsexplain/htdocs 
 
 # Clean
 clean:

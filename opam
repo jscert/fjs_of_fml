@@ -32,6 +32,6 @@ depends: [
 ]
 url {
  src : "http://jsexplain.gforge.inria.fr/fjs_of_fml-0.1.tar.gz"
- checksum: "md5=1d1af69ed552af3efc941899452f0788"
+ checksum: "md5=79260bb187f0218ea5015d7f4cdb7c2c"
 }
 
