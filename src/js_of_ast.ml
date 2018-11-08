@@ -954,7 +954,7 @@ and js_of_expression (sm : shadow_map) ctx dest e =
     apply_dest' ctx dest (stuplebindings ^ sexp)
 
   | Texp_apply (f, exp_l) when is_doc_texpr e -> 
-     apply_dest' ctx dest  "caca"
+     apply_dest' ctx dest  "test"
 
   | Texp_apply (f, exp_l) when is_monadic_texpr e ->
       let sl_clean = exp_l
