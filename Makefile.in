@@ -65,6 +65,8 @@ TMP_DIR := /tmp
 TMP_FJS := $(TMP_DIR)/$(NAME)
 VERSION := 0.1
 TGZ := $(NAME)-$(VERSION).tar.gz
+MD5TXT := $(TGZ).md5sum.txt
+OPAM_REPO_GIT := ~/git/opam-repository
 
 ######################################
 
@@ -117,15 +119,23 @@ ifeq ($(OPAM),opam)
   endif
 endif
 
-# Create tgz file and print its md5sum to a md5sum.txt : TODO use it to update opam file
-package :
+# Deployment
+$(TGZ) :
 	rm -rf $(TMP_FJS) $(TGZ)
 	mkdir $(TMP_FJS)
 	git clone $(GIT_REPO) $(TMP_FJS)
 	git -C $(TMP_FJS)/ checkout $(GIT_BRANCH)
 	rm -rf $(TMP_FJS)/.git
 	tar -cvzf $(TGZ) -C $(TMP_DIR) $(NAME)
-	md5sum $(TGZ) > $(TGZ).md5sum.txt
+	md5sum $(TGZ) > $(MD5TXT)
+
+opam_file_update : $(TGZ)
+	sed -i -r 's|^(\schecksum: "md5\s*=\s*).*"|\1'$$(cat *.txt | cut -d" " -f 1)'"|' opam
+	cp opam $(OPAM_REPO_GIT)/packages/$(NAME)/$(NAME).$(VERSION)
+
+deploy : opam_file_update
+	@read -p "User ?" FORGE_USER; \
+	scp -p $(TGZ) $$(FORGE_USER)@scm.gforge.inria.fr:/home/groups/jsexplain/htdocs 
 
 # Clean
 clean:
@@ -138,7 +148,7 @@ clean:
 	$(MAKE) -C $(TESTS_DIR) clean
 	rm -rf autom4te.cache  config.log  config.status 
 
-.PHONY: default all byte native stdlib debug clean ocamldot archi opam_install
+.PHONY: default all byte native stdlib debug clean ocamldot archi opam_install opam_file_update
 
 FORCE: # Force rebuilds of OCaml targets via ocamlbuild, the FORCE file must not exist.
 .NOTPARALLEL: # Only one ocamlbuild can be run at a time
