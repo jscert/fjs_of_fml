@@ -120,6 +120,9 @@ ifeq ($(OPAM),opam)
 endif
 
 # Deployment
+#
+# Caution : One could say that these commands should be remove from the Makefile for security
+#	    reasons. 
 $(TGZ) :
 	rm -rf $(TMP_FJS) $(TGZ)
 	mkdir $(TMP_FJS)
@@ -129,6 +132,11 @@ $(TGZ) :
 	tar -cvzf $(TGZ) -C $(TMP_DIR) $(NAME)
 	md5sum $(TGZ) > $(MD5TXT)
 
+# WARNING : md5sum of opam file in the tgz archive won't ever be the same
+# 	    as the one in opam-repository.
+#	    This should not be an issue since the md5sum checked is the one in
+#	    in Opam repository not the one in the archive. 
+#	    And it's done only at dowload time, not when the package is pinned.
 opam_file_update : $(TGZ)
 	sed -i -r 's|^(\schecksum: "md5\s*=\s*).*"|\1'$$(cat *.txt | cut -d" " -f 1)'"|' opam
 	cp opam $(OPAM_REPO_GIT)/packages/$(NAME)/$(NAME).$(VERSION)
@@ -148,7 +156,7 @@ clean:
 	$(MAKE) -C $(TESTS_DIR) clean
 	rm -rf autom4te.cache  config.log  config.status 
 
-.PHONY: default all byte native stdlib debug clean ocamldot archi opam_install opam_file_update
+.PHONY: default all byte native stdlib debug clean ocamldot archi opam_install opam_file_update deploy
 
 FORCE: # Force rebuilds of OCaml targets via ocamlbuild, the FORCE file must not exist.
 .NOTPARALLEL: # Only one ocamlbuild can be run at a time
