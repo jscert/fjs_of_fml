@@ -1,13 +1,21 @@
+(* Some debug command 
+
+See generated attributes :
+ocamlfind ocamlc -dparsetree src/tests/comment.ml  2>&1 | grep attribute
+
+*)
+
+
+
 (** @elabel ECMAScript Reference Interpreter Implementation
     @esurl     https://tc39.github.io/ecma262/
     @esversion 2017
 *)
 
+
 type stack =
   | C of int * stack [@f value, stack]
   | N [@f]
-
-let is_empty s = s === N
 
 let push x stack = C(x, stack)
 
@@ -23,7 +31,6 @@ let pop stack =
  @esid ride-the-lightning
 
 *)
-
 type expr =
   | Const of int [@f value]
   | Add of expr * expr [@f left, right]
@@ -35,6 +42,17 @@ and sexpr =
   | Emp [@f]
   | Push of expr * sexpr [@f value, stack]
 
+(** foo foo  *)
+
+(** PutValue(V,W)
+
+    Note: Although the types of [v] and [w] are resultof, their states are
+    disregarded and must be explicitly passed, as it is not clear in which
+    order they were calculated.
+
+    @esid sec-putvalue
+    @essec 6.2.4.2
+*)
 let rec run expr = match expr with
   | Const n -> n
   | Add (ls, rs) -> run ls + run rs
@@ -49,3 +67,5 @@ and evals sexpr = match sexpr with
 let rec mapMystack f s = match s with
   | N -> N
   | C (x, xs) -> C (f x, mapMystack f xs)
+
+
