@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "fjs_of_fml"
-version: "0.1"
+version: "1.0"
 maintainer: "Thomas Wood <thomas.wood09@imperial.ac.uk>"
 authors: [
   "Arthur CharguÃ©raud <arthur@chargueraud.org>"
@@ -26,12 +26,13 @@ remove: [
 ]
 depends: [
   "ocamlfind"
+  "ocamlbuild"
   "alcotest"
   "conf-autoconf"
   "ocaml" {>= "4.04.0" &  < "4.05"}
 ]
 url {
- src : "http://jsexplain.gforge.inria.fr/fjs_of_fml-0.1.tar.gz"
+ src : "http://jsexplain.gforge.inria.fr/fjs_of_fml-1.0.tar.gz"
  checksum: "md5=79260bb187f0218ea5015d7f4cdb7c2c"
 }
 
