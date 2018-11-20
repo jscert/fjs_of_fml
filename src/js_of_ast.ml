@@ -767,6 +767,9 @@ let rec js_of_structure s =
    (prefix ^ "@," ^ contents ^ postfix, namesbound)
 
 and js_of_structure_item s =
+  (* TODO/FIXME : Do the rollback_comment : str_replace2 should replace a char with a string  *)
+  let format_comment c = str_replace '%' '~' (str_replace '\\' '|' c) in
+  let rollback_comment c = c in
   let loc = s.str_loc in
   match s.str_desc with
   | Tstr_eval (e, _)     -> 
@@ -777,15 +780,17 @@ and js_of_structure_item s =
       let comment = 
        try 
         let id, pl = List.find (fun (id, _) -> id.txt = "ocaml.doc") vb.vb_attributes in
-        Printf.sprintf "\n/*\n%s\n*/" (String.concat " " (extract_payload pl))
+        let payl = Printf.sprintf "%s" (String.concat " "  (extract_payload pl)) in
+        Printf.sprintf "%s"  (format_comment payl)
        with Not_found -> ""
       in
         let id = ppf_ident_of_pat ShadowMapM.empty vb.vb_pat in
         if ident_is_shadowing s.str_env id then error ~loc "Variable shadowing not permitted at toplevel"
         else
         let sbody = js_of_expression_inline_or_wrap ShadowMapM.empty ctx_initial vb.vb_expr in
-         (* TODO/FIXME : Use Format Module *)
-         let s = Printf.sprintf "@[<v 0>%s\nvar %s = %s;@]" comment id sbody in
+         let s = if comment = "" then Printf.sprintf "@[<v 0>var %s = %s;@]" id sbody 
+                 else Printf.sprintf "@[<v 0>/*@,%s@,*/@,var %s = %s;@]" comment id sbody  
+         in
         (s, [id])))
   | Tstr_type (rec_flag, decls) ->
      combine_list_output (~~ List.map decls (fun decl -> 
@@ -815,9 +820,8 @@ and js_of_structure_item s =
   | Tstr_class_type _  -> out_of_scope loc "class types"
   | Tstr_include    _  -> out_of_scope loc "includes"
   | Tstr_attribute (l, c) ->
-    (* TODO/FIXME : Use Format Module *)
-    let payl = Printf.sprintf "\n/*\n%s\n*/" (String.concat " " (extract_payload c)) in
-    if l.txt = "ocaml.text" then (payl, []) else  out_of_scope loc "attributes"
+    let payl = Printf.sprintf "@[<v 0>/*@,%s@,*/@]" (String.concat " " (extract_payload c)) in
+    if l.txt = "ocaml.text" then (format_comment payl, []) else  out_of_scope loc "attributes"
 
 (* Translates each pattern/subexpression pair branch of a match expression *)
 and js_of_branch sm ctx dest b eobj =

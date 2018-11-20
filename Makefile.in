@@ -148,7 +148,7 @@ deploy : opam_file_update
 # Clean
 clean:
 	$(OCAMLBUILD) -clean
-	rm -f .ocamldebug $(SRC_DIR)/.depend $(SRC_DIR)/archi_generator.pdf configure  $(TGZ) $(TGZ).md5sum.txt
+	rm -f .ocamldebug $(SRC_DIR)/.depend archi_generator.pdf configure  $(TGZ) $(TGZ).md5sum.txt
 	rm -f $(BYTES_OPAM) $(NATIVES_OPAM)
 	rm -rf $(FJS_OPAM_LIB_DIR)
 	$(MAKE) -C $(STDLIB_DIR) clean

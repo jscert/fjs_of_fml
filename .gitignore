@@ -17,4 +17,5 @@ src/utils/ocamldot/ocamldot.cmi
 src/utils/ocamldot/ocamldot.cmo
 src/utils/ocamldot/ocamldot.ml
 src/#*
+*.native
 

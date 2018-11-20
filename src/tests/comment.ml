@@ -17,8 +17,18 @@ type stack =
   | C of int * stack [@f value, stack]
   | N [@f]
 
+(** Convert a data attribute into an accessor attribute.
+
+    Implements the following spec text: "Convert the property \[...\] from a
+    data property to an accessor property.  Preserve the existing values of the
+    converted property's \[\[Configurable\]\] and \[\[Enumerable\]\] attributes
+    and set the rest of the property's attributes to their default values."
+
+    @essec 9.1.6.3-7.b.i *)
 let push x stack = C(x, stack)
 
+(** @essec 9.2.7.1
+    @esid sec-%throwtypeerror% *)
 let pop stack =
   match stack with
   | C (x, xs) -> x
