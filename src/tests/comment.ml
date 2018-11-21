@@ -74,6 +74,9 @@ and evals sexpr = match sexpr with
   | Emp -> N
   | Push (v, s) -> push (run v) (evals s)
 
+(** val env_record_has_binding :
+    state -> execution_ctx -> env_loc -> prop_name -> result **)
+
 let rec mapMystack f s = match s with
   | N -> N
   | C (x, xs) -> C (f x, mapMystack f xs)

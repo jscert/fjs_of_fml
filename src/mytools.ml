@@ -169,6 +169,10 @@ let str_replace char1 char2 s =
    done;
    s2
 
+(* http://www.codecodex.com/wiki/Replace_or_remove_all_occurrences_of_a_string#OCaml *)
+let str_replace_sub input output =
+    Str.global_replace (Str.regexp_string input) output 
+
 let cutlines width s =
    let len = String.length s in
    let b = Buffer.create len in
@@ -198,7 +202,6 @@ let make_upper_2 s =
    let s' = String.copy s in
    s'.[1] <- Char.uppercase s.[1];
    s'
-
 
 (**************************************************************)
 (** File manipulation functions *)

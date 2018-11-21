@@ -341,8 +341,11 @@ let ppf_pat_array id_list array_expr =
 let ppf_field_access expr field =
   Printf.sprintf "%s.%s" expr field
 
-let ppf_comment c =
- Printf.sprintf "/*\n%s\n*/" c
+let ppf_comment c = Printf.sprintf "@[<v 0>/*@,%s@,*/@]" c
+
+let ppf_value id body comment = 
+  if comment = "" then Printf.sprintf "@[<v 0>var %s = %s;@]" id body else
+  Printf.sprintf "@[<v 0>/*@,%s@,*/@,var %s = %s;@]" comment id body 
 
 (****************************************************)
 (* Identifier Rewriting *)
@@ -767,9 +770,20 @@ let rec js_of_structure s =
    (prefix ^ "@," ^ contents ^ postfix, namesbound)
 
 and js_of_structure_item s =
-  (* TODO/FIXME : Do the rollback_comment : str_replace2 should replace a char with a string  *)
-  let format_comment c = str_replace '%' '~' (str_replace '\\' '|' c) in
-  let rollback_comment c = c in
+  let format_comment c =
+    str_replace_sub "%" "%%" (str_replace '\\' '|' c) in
+  let att_tuples pl =
+    let payl_extract  = extract_payload pl in
+    let payl_lines = 
+     List.map (fun s -> let ls = String.split_on_char '\n' s in List.map String.trim ls) payl_extract in
+    let payl_att_content = 
+     List.flatten (List.map (List.filter (fun s -> s <> "" && s.[0] = '@')) payl_lines) in
+    let words = List.map (String.split_on_char ' ') payl_att_content in
+    let names = List.map (fun s -> String.sub s 1 (String.length s - 1)) (List.map List.hd  words) in
+    let content = List.map (fun ls -> String.trim (String.concat " " (List.tl ls))) words in
+    List.combine names content
+ in
+
   let loc = s.str_loc in
   match s.str_desc with
   | Tstr_eval (e, _)     -> 
@@ -777,20 +791,27 @@ and js_of_structure_item s =
      (str, [])
   | Tstr_value (_, vb_l) ->
      combine_list_output (~~ List.map vb_l (fun vb ->
-      let comment = 
+     let url = "https://tc39.github.io/ecma262/" in
+      let comment =
        try 
         let id, pl = List.find (fun (id, _) -> id.txt = "ocaml.doc") vb.vb_attributes in
         let payl = Printf.sprintf "%s" (String.concat " "  (extract_payload pl)) in
-        Printf.sprintf "%s"  (format_comment payl)
+        let at_tup = att_tuples pl in 
+        let update_esid pl atup ul =
+          let esid = try List.assoc "esid" atup with Not_found -> "" in
+          if esid = "" then format_comment payl    else
+            let uppayl = str_replace_sub esid (esid ^ " : " ^ url ^ "#"  ^ esid) payl in 
+                  format_comment uppayl 
+          in
+        let comm = update_esid payl at_tup url in
+        Printf.sprintf "%s" comm 
        with Not_found -> ""
       in
         let id = ppf_ident_of_pat ShadowMapM.empty vb.vb_pat in
         if ident_is_shadowing s.str_env id then error ~loc "Variable shadowing not permitted at toplevel"
         else
         let sbody = js_of_expression_inline_or_wrap ShadowMapM.empty ctx_initial vb.vb_expr in
-         let s = if comment = "" then Printf.sprintf "@[<v 0>var %s = %s;@]" id sbody 
-                 else Printf.sprintf "@[<v 0>/*@,%s@,*/@,var %s = %s;@]" comment id sbody  
-         in
+         let s = ppf_value id sbody comment in
         (s, [id])))
   | Tstr_type (rec_flag, decls) ->
      combine_list_output (~~ List.map decls (fun decl -> 
@@ -819,9 +840,9 @@ and js_of_structure_item s =
   | Tstr_class      _  -> out_of_scope loc "objects"
   | Tstr_class_type _  -> out_of_scope loc "class types"
   | Tstr_include    _  -> out_of_scope loc "includes"
-  | Tstr_attribute (l, c) ->
-    let payl = Printf.sprintf "@[<v 0>/*@,%s@,*/@]" (String.concat " " (extract_payload c)) in
-    if l.txt = "ocaml.text" then (format_comment payl, []) else  out_of_scope loc "attributes"
+  | Tstr_attribute (l, c) -> if l.txt = "ocaml.text" then
+      let payl = ppf_comment (String.concat " " (extract_payload c)) in
+      (format_comment payl, []) else  out_of_scope loc "attributes"
 
 (* Translates each pattern/subexpression pair branch of a match expression *)
 and js_of_branch sm ctx dest b eobj =

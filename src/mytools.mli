@@ -35,6 +35,7 @@ val add_to_list : 'a list ref -> 'a -> unit
 val str_cmp : string -> string -> int
 val str_starts_with : string -> string -> bool
 val str_replace : char -> char -> string -> string
+val str_replace_sub : string -> string -> string -> string 
 val cutlines : int -> string -> string
 val make_upper : string -> string
 val make_upper_2 : string -> string
