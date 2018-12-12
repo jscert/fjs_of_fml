@@ -23,6 +23,7 @@ open Mytools
 open Types
 open Typedtree
 open Monadic_binder_list
+open Parsetree
 
 module L = Logged (Token_generator) (struct let size = 256 end)
 
@@ -756,6 +757,64 @@ let is_doc_texpr e = List.exists is_doc_attr e.exp_attributes
 (****************************************************************)
 (* TRANSLATION *)
 
+(* Second version of url update (fonctionnal God forgive me)
+   Third version should user a fold on items (i guess)  
+  *)
+  exception Found_Url of string
+  let url items =
+     let get_url s = match s.str_desc with 
+       | Tstr_attribute (l, c) ->
+         let get s =
+           let words = List.map String.trim (String.split_on_char '@' s) in
+           List.iter (fun s -> 
+               if String.length s > 4 then if String.sub s 0 5  = "esurl" 
+               then List.iter (fun h ->
+                   if String.length h > 4 then if String.sub h 0 5 = "https" then raise (Found_Url h) else ()
+) (String.split_on_char ' ' s)
+                     else ()
+           ) words
+         in
+         List.iter get (extract_payload c)
+       | _ -> () in
+     try
+       List.iter get_url items; ""
+     with Found_Url u -> u
+
+(* This is really an ugly way to parse and update url in comment, at least it's url is not hard codded
+   anymore
+*)
+let set_url url struct_item = 
+  let newPstr_eval x = match x.pstr_desc with 
+   | Pstr_eval (e, l ) ->
+     (match e with 
+     | {pexp_desc = Pexp_constant (Pconst_string  (ss, k))} ->       
+    let words = String.split_on_char '@' ss in
+    let update  = 
+      let set w = if String.length w > 3 && String.sub w 0 4 = "esid" then
+          let tl = List.nth (String.split_on_char ' ' w) 1 in
+          String.concat " " ["esid"; url ^ "#"  ^ tl]
+        else w  in
+      List.map set
+    in
+    let new_ss = Printf.sprintf "%s" (String.concat "@" (update words))
+      in
+    {x with pstr_desc = Pstr_eval ({e with pexp_desc = Pexp_constant (Pconst_string  (new_ss, k))}, l )}
+    | _ -> x)
+   | _ -> x
+  in
+  let newPstr pl = match pl with 
+   | PStr s -> PStr (List.map newPstr_eval s)
+   | _ -> pl in
+  let setu  vb = 
+    let new_vb_at (id, p ) = if id.txt <> "ocaml.doc" then  (id, p ) else (id, newPstr p) in
+    {vb with vb_attributes = List.map new_vb_at vb.vb_attributes}   
+  in
+  match struct_item.str_desc with
+  | Tstr_value (rf, vb_l) -> 
+    {struct_item with str_desc = Tstr_value (rf, List.map setu vb_l)} 
+  | _ -> struct_item
+
+
 let rec js_of_structure s =
    let rec extract_opens acc items =
       match items with
@@ -764,7 +823,9 @@ let rec js_of_structure s =
       | _ -> (List.rev acc, items)
       in
    let open_paths, items = extract_opens [] s.str_items in
-   let contents, namesbound = combine_list_output (List.map (fun strct -> js_of_structure_item strct) items) in
+   let uitems = List.map (set_url (url items)) items in 
+   let js_of_struct_items = List.map (fun strct -> js_of_structure_item strct) uitems in
+   let contents, namesbound = combine_list_output  js_of_struct_items in
    let prefix = List.fold_left (fun str path -> str ^ "with (" ^ ppf_path path ^ ") {@,") "" open_paths in
    let postfix = List.fold_left (fun str path -> str ^ "@,}// end of with " ^ ppf_path path) "" open_paths in
    (prefix ^ "@," ^ contents ^ postfix, namesbound)
@@ -772,17 +833,6 @@ let rec js_of_structure s =
 and js_of_structure_item s =
   let format_comment c =
     str_replace_sub "%" "%%" (str_replace '\\' '|' c) in
-  let att_tuples pl =
-    let payl_extract  = extract_payload pl in
-    let payl_lines = 
-     List.map (fun s -> let ls = String.split_on_char '\n' s in List.map String.trim ls) payl_extract in
-    let payl_att_content = 
-     List.flatten (List.map (List.filter (fun s -> s <> "" && s.[0] = '@')) payl_lines) in
-    let words = List.map (String.split_on_char ' ') payl_att_content in
-    let names = List.map (fun s -> String.sub s 1 (String.length s - 1)) (List.map List.hd  words) in
-    let content = List.map (fun ls -> String.trim (String.concat " " (List.tl ls))) words in
-    List.combine names content
- in
 
   let loc = s.str_loc in
   match s.str_desc with
@@ -791,20 +841,11 @@ and js_of_structure_item s =
      (str, [])
   | Tstr_value (_, vb_l) ->
      combine_list_output (~~ List.map vb_l (fun vb ->
-     let url = "https://tc39.github.io/ecma262/" in
       let comment =
        try 
         let id, pl = List.find (fun (id, _) -> id.txt = "ocaml.doc") vb.vb_attributes in
         let payl = Printf.sprintf "%s" (String.concat " "  (extract_payload pl)) in
-        let at_tup = att_tuples pl in 
-        let update_esid pl atup ul =
-          let esid = try List.assoc "esid" atup with Not_found -> "" in
-          if esid = "" then format_comment payl    else
-            let uppayl = str_replace_sub esid (esid ^ " : " ^ url ^ "#"  ^ esid) payl in 
-                  format_comment uppayl 
-          in
-        let comm = update_esid payl at_tup url in
-        Printf.sprintf "%s" comm 
+        Printf.sprintf "%s" (format_comment payl) 
        with Not_found -> ""
       in
         let id = ppf_ident_of_pat ShadowMapM.empty vb.vb_pat in
