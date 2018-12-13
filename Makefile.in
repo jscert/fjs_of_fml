@@ -1,0 +1,162 @@
+#
+# sample Makefile for Objective Caml
+# Copyright (C) 2001 Jean-Christophe FILLIATRE
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Library General Public
+# License version 2, as published by the Free Software Foundation.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU Library General Public License version 2 for more details
+# (enclosed in the file LGPL).
+
+# where to install the binaries
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+BINDIR=@bindir@
+
+# where to install the man page
+MANDIR=@mandir@
+
+# other variables set by ./configure
+OCAMLC   = @OCAMLC@
+OCAMLOPT = @OCAMLOPT@
+OCAMLDEP = @OCAMLDEP@
+OCAMLLEX = @OCAMLLEX@
+OCAMLYACC= @OCAMLYACC@
+OCAMLLIB = @OCAMLLIB@
+OCAMLBEST= @OCAMLBEST@
+OCAMLVERSION = @OCAMLVERSION@
+OCAMLWEB = @OCAMLWEB@
+OCAMLWIN32 = @OCAMLWIN32@
+EXE = @EXE@
+OPAM = @OPAM@
+OPAMBINDIR = @OPAMBINDIR@
+OPAMLIBDIR = @OPAMLIBDIR@
+OCAMLBUILD = @OCAMLBUILD@
+OCAMLFIND = @OCAMLFIND@
+OPAM = @OPAM@
+
+######################################
+
+SRC_DIR := src
+NAME := fjs_of_fml
+OCAMLBUILDCMD  := $(OCAMLBUILD) -j 4 -classic-display -use-ocamlfind -Is $(SRC_DIR) -no-hygiene
+STDLIB_DIR  := $(SRC_DIR)/stdlib_ml
+TESTS_DIR  := $(SRC_DIR)/tests
+EXECUTABLES := $(NAME) monad_ppx displayed_sources lineof assembly
+BYTES := $(addsuffix .byte,$(EXECUTABLES))
+NATIVES := $(addsuffix .native,$(EXECUTABLES))
+OCAMLDOT_DIR := $(SRC_DIR)/utils/ocamldot
+OCAMLDOT := $(OCAMLDOT_DIR)/ocamldot
+
+FJS_OPAM_LIB_DIR := $(OPAMLIBDIR)/$(NAME)
+FJS_OPAM_STD_LIB := $(FJS_OPAM_LIB_DIR)/stdlib_ml
+FJS_OPAM_TESTS_DIR := $(FJS_OPAM_LIB_DIR)/tests
+BYTES_OPAM := $(addprefix $(OPAMBINDIR)/,$(BYTES))
+NATIVES_OPAM := $(addprefix $(OPAMBINDIR)/,$(NATIVES))
+
+GIT_REPO := https://github.com/jscert/$(NAME).git
+GIT_BRANCH := $$(git rev-parse --abbrev-ref HEAD)
+TMP_DIR := /tmp
+TMP_NAME := $(TMP_DIR)/$(NAME)
+VERSION := 1.0
+TGZ := $(NAME)-$(VERSION).tar.gz
+MD5TXT := $(TGZ).md5sum.txt
+OPAM_REPO_GIT := ~/git/opam-repository
+
+######################################
+
+default: ocamlbuild byte stdlib
+all: ocamlbuild byte native stdlib
+byte: $(BYTES)
+native: $(NATIVES)
+
+test: byte stdlib
+	$(MAKE) -C $(TESTS_DIR) test
+
+stdlib:
+	$(MAKE) -C $(STDLIB_DIR)
+
+ocamlbuild :
+	eval $$(opam env)
+
+# Rules
+%.native: FORCE
+	$(OCAMLBUILDCMD) $@
+
+%.byte: FORCE
+	$(OCAMLBUILDCMD) $@
+
+# Debug
+debug:  $(addsuffix .d.byte,$(EXECUTABLES)) .ocamldebug
+
+.ocamldebug: _tags
+	grep -o "package([^)]*)" _tags | sed "s/package(\([^)]*\))/\1/" | xargs $(OCAMLFIND) query -recursive | sed "s/^/directory /" > .ocamldebug
+
+# Archi
+ocamldot :
+	$(MAKE) -C $(OCAMLDOT_DIR)
+
+archi : ocamldot
+	cd $(SRC_DIR) ; $(OCAMLDEP) *.ml > .depend
+	cat $(SRC_DIR)/.depend | $(OCAMLDOT) | dot -Tpdf > archi_generator.pdf
+
+# Opam Install
+opam_install : all
+ifeq ($(OPAM),opam)
+  ifneq ($(OPAMBINDIR),)
+    ifneq ($(OPAMLIBDIR),)
+	@cp $(BYTES) $(NATIVES) $(OPAMBINDIR)
+	@mkdir -p $(FJS_OPAM_LIB_DIR)
+	 @mkdir -p $(FJS_OPAM_STD_LIB)
+	  @cp $(STDLIB_DIR)/*.cm* $(FJS_OPAM_STD_LIB)
+	  @cp $(STDLIB_DIR)/stdlib.js $(FJS_OPAM_STD_LIB)
+    endif
+  endif
+endif
+
+# Deployment
+
+# Caution : One could say that these commands should be remove from the Makefile for security
+#	    reasons. 
+$(TGZ) :
+	rm -rf $(TMP_NAME) $(TGZ)
+	mkdir $(TMP_NAME)
+	git clone $(GIT_REPO) $(TMP_NAME)
+	git -C $(TMP_NAME)/ checkout $(GIT_BRANCH)
+	rm -rf $(TMP_NAME)/.git
+	tar -cvzf $(TGZ) -C $(TMP_DIR) $(NAME)
+	md5sum $(TGZ) > $(MD5TXT)
+
+# WARNING : md5sum of opam file in the tgz archive won't ever be the same
+# 	    as the one in opam-repository.
+#	    This should not be an issue since the md5sum checked is the one in
+#	    in Opam repository not the one in the archive. 
+#	    And it's done only at dowload time, not when the package is pinned.
+opam_file_update : $(TGZ)
+	sed -i -r 's|^(\schecksum: "md5\s*=\s*).*"|\1'$$(cat *.txt | cut -d" " -f 1)'"|' opam
+	cp opam $(OPAM_REPO_GIT)/packages/$(NAME)/$(NAME).$(VERSION)
+
+deploy : opam_file_update
+	read -p "User ?" FORGE_USER; \
+	scp -p $(TGZ) $$FORGE_USER@scm.gforge.inria.fr:/home/groups/jsexplain/htdocs 
+
+# Clean
+clean:
+	$(OCAMLBUILD) -clean
+	rm -f .ocamldebug $(SRC_DIR)/.depend archi_generator.pdf configure  $(TGZ) $(TGZ).md5sum.txt
+	rm -f $(BYTES_OPAM) $(NATIVES_OPAM)
+	rm -rf $(FJS_OPAM_LIB_DIR)
+	$(MAKE) -C $(STDLIB_DIR) clean
+	$(MAKE) -C $(OCAMLDOT_DIR) clean
+	$(MAKE) -C $(TESTS_DIR) clean
+	rm -rf autom4te.cache  config.log  config.status 
+
+.PHONY: default all byte native stdlib debug clean ocamldot archi opam_install opam_file_update deploy
+
+FORCE: # Force rebuilds of OCaml targets via ocamlbuild, the FORCE file must not exist.
+.NOTPARALLEL: # Only one ocamlbuild can be run at a time

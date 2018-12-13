@@ -1,0 +1,6 @@
+true: package(str), package(compiler-libs.common)
+
+# Generate cmt type information files
+true: bin_annot
+
+<src>: -traverse

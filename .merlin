@@ -1,0 +1,6 @@
+S src
+S src/stdlib_ml
+
+B _build/src
+
+PKG compiler-libs
