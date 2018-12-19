@@ -1,6 +1,7 @@
 open Params
 open Format
 open Mytools
+open Ppf_helpers
 
 (*
    Remark: field name attributes for builtins (eg: ::) are defined in attributes.ml
