@@ -66,12 +66,6 @@ val increment_sm : int ShadowMapM.t -> ShadowMapM.key -> int ShadowMapM.t
 val ident_is_shadowing : Env.t -> string -> bool
 val update_shadow_map :
   int ShadowMapM.t -> Env.t -> Ident.t -> int ShadowMapM.t
-val show_list_f : ('a -> string) -> string -> 'a list -> string
-val show_list : string -> string list -> string
-val zip : 'a list -> 'a list -> ('a * 'a) list
-val unzip : ('a * 'b) list -> 'a list * 'b list
-val string_fold_lefti : ('a -> int -> char -> 'a) -> 'a -> string -> 'a
-val string_fold_righti : (int -> char -> 'a -> 'a) -> string -> 'a -> 'a
 val is_sbool : string -> bool
 val is_unit : string -> bool
 val unit_repr : string

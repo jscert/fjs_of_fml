@@ -51,6 +51,12 @@ val show_listq : ('a -> string) -> string -> 'a list -> string
 val show_option : ('a -> string) -> 'a option -> string
 val show_str : 'a -> 'a
 val show_par : bool -> string -> string
+val show_list_f : ('a -> string) -> string -> 'a list -> string
+val show_list : string -> string list -> string
+val zip : 'a list -> 'a list -> ('a * 'a) list
+val unzip : ('a * 'b) list -> 'a list * 'b list
+val string_fold_lefti : ('a -> int -> char -> 'a) -> 'a -> string -> 'a
+val string_fold_righti : (int -> char -> 'a -> 'a) -> string -> 'a -> 'a
 val output : string -> unit
 val unsupported : ?loc:Location.t -> string -> 'a
 val out_of_scope : Location.t -> string -> 'a

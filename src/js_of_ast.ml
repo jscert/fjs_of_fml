@@ -50,45 +50,6 @@ let update_shadow_map sm env id =
   let str_id = Ident.name id in
   if ident_is_shadowing env str_id then increment_sm sm str_id else sm
 
-(****************************************************************)
-(* STRING UTILITIES *)
-
-(**
- * Useful functions (Warning: shadows `show_list' from Mytools)
- *)
-
-let show_list_f f sep l = l
-  |> List.map f
-  |> List.fold_left (fun acc x -> acc ^ (if acc = "" then "" else sep) ^ x) ""
-
-let show_list sep l =
-  List.fold_left (fun acc x -> acc ^ (if acc = "" then "" else sep) ^ x) "" l
-
-let rec zip l1 l2 = match l1, l2 with
-  | [], x :: xs | x :: xs, [] -> failwith "zip: list must have the same length."
-  | [], [] -> []
-  | x :: xs, y :: ys -> (x, y) :: zip xs ys
-
-let unzip l =
-  let rec aux acc1 acc2 = function
-  | [] -> List.rev acc1, List.rev acc2
-  | (x, y) :: xs -> aux (x :: acc1) (y :: acc2) xs
-in aux [] [] l
-
-let string_fold_lefti f acc s =
-  let len = String.length s in
-  let rec aux f acc i =
-    if i = len then acc
-    else aux f (f acc i s.[i]) (succ i)
-  in aux f acc 0
-
-let string_fold_righti f s acc =
- let len = String.length s in
-  let rec aux f i acc =
-    if i = len then acc
-    else f i s.[i] (aux f (succ i) acc)
-  in aux f 0 acc
-
 
 (****************************************************************)
 (* RECOGNIZING EXPRESSIONS *)
