@@ -85,7 +85,7 @@ let map_cstr_fields ?loc (sm : shadow_map) bind cstr elements =
 let function_get_args_and_body e =
   let rec aux pats body = 
     match body.exp_desc with
-    | Texp_function (_, c :: [], Total) ->
+    | Texp_function { cases =c :: []; partial = Total} ->
       let (p, body2) = (c.c_lhs, c.c_rhs) in 
       aux (p :: pats) body2
     | _ ->
@@ -143,7 +143,7 @@ let coercion_functions =
     "JsInterpreterMonads.res_out"; 
     "JsInterpreterMonads.res_ter"; 
     "JsInterpreterMonads.result_out";
-    "Stdlib.number_of_int";
+    "Stdlib_fml.number_of_int";
     (* "JsIntepreterMonads.res_void"; --no arg *)
   ]
 
@@ -304,7 +304,8 @@ let js_of_path_longident sm path ident =
   (* for string *)
   | "^"   -> "+" (* !!TODO: we want to claim ability to type our sublanguage, so we should not use this *)
   | res   ->
-      let res = if !generate_qualified_names && (Path.head path).Ident.name <> "Stdlib"
+      let res = 
+        if !generate_qualified_names && Path.name path <> "Stdlib_fml"
                    then ppf_path path else res in
       ppf_ident_name res sm
 
@@ -461,7 +462,7 @@ and js_of_structure_item s =
         | Type_variant cstr_decls ->
            let styp = decl.typ_name.txt in
            combine_list_output (~~ List.map cstr_decls (fun (cd:Types.constructor_declaration) -> 
-              let cstr_name = cd.Types.cd_id.Ident.name in
+              let cstr_name = Ident.name cd.Types.cd_id in
               let fields = extract_cstr_attrs_basic cstr_name cd.cd_attributes in
               let sargs = show_list ", " fields in
               let sbindings = map_opt2 (fun x y -> ppf_cstr x y) fields fields in (* FIXME: twice fields, really?! *)
@@ -587,7 +588,7 @@ and js_of_expression (sm : shadow_map) ctx dest e =
     let sexp = generate_logged_let loc ids ctx newctx sdecl sbody in
     sexp
 
-  | Texp_function (_, c :: [], Total) ->
+  | Texp_function { cases =c :: []; partial = Total}  ->
     let pats, body = function_get_args_and_body e in
     let pats_clean = List.filter (fun pat -> is_mode_not_pseudo() || not (is_hidden_type pat.pat_type)) pats in
     let arg_ids = List.map (ppf_ident_of_pat sm) pats_clean in   (******* HERE *******)
@@ -882,7 +883,7 @@ and js_of_expression (sm : shadow_map) ctx dest e =
       let sexp = ppf_field_access (inline_of_wrap exp) lbl.lbl_name in
       apply_dest' ctx dest sexp
 
-  | Texp_function (Nolabel, cases, Total) ->
+  | Texp_function { arg_label = Nolabel; param; cases; partial = Total} ->
       let mk_pat pat_des =
         { pat_desc = pat_des;
           pat_loc = e.exp_loc;
@@ -908,14 +909,15 @@ and js_of_expression (sm : shadow_map) ctx dest e =
            c_guard = None;
            c_rhs = mk_exp (Texp_match (thearg, cases, [], Total));
           } in
-      let exp = mk_exp (Texp_function (Nolabel, [thecase], Total)) in
+      let exp = 
+        mk_exp (Texp_function { arg_label = Nolabel; param; cases=[thecase]; partial = Total} ) in
       js_of_expression sm ctx dest exp
 
   | Texp_assert      _                -> out_of_scope loc "assert (please use assert ppx syntax)"
   | Texp_match      (_,_,_, Partial)  -> out_of_scope loc "partial matching"
   | Texp_match      (_,_,_,_)         -> out_of_scope loc "matching with exception branches"
   | Texp_try        (_,_)             -> out_of_scope loc "exceptions"
-  | Texp_function (_, _, _)           -> out_of_scope loc "use of labels"
+  | Texp_function    _                -> out_of_scope loc "use of labels"
   | Texp_variant    (_,_)             -> out_of_scope loc "polymorphic variant"
   | Texp_setfield   (_,_,_,_)         -> out_of_scope loc "setting field"
   | Texp_send       (_,_,_)           -> out_of_scope loc "objects"

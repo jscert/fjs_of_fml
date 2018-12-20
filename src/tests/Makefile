@@ -1,11 +1,11 @@
 MOCHA := node_modules/mocha/bin/mocha
-STDLIB_DIR := ../stdlib_ml
+STDLIB_DIR := ../stdlib_fml
 BIN_DIR := ../..
 PPX := -ppx $(BIN_DIR)/monad_ppx.byte
 LIBDIRS := lib $(STDLIB_DIR)
 LIBS := $(PPX) $(foreach lib,$(LIBDIRS),-I $(lib))
-REPLACE_STDLIB := -nopervasives -nostdlib -open Stdlib
-LINK_LIBS := $(STDLIB_DIR)/stdlib.cmo lib/mocha.cmo
+REPLACE_STDLIB := -nopervasives -nostdlib -open Stdlib_fml
+LINK_LIBS := $(STDLIB_DIR)/stdlib_fml.cmo lib/mocha.cmo
 
 TESTS := $(wildcard *.ml)
 TESTS_JS := $(patsubst %.ml,%.unlog.as.js,$(TESTS))

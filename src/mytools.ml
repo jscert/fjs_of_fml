@@ -163,11 +163,11 @@ let str_starts_with p s =
    && String.sub s 0 n = p 
 
 let str_replace char1 char2 s =
-   let s2 = String.copy s in
-   for i = 0 to pred (String.length s) do
-      if s2.[i] = char1 then s2.[i] <- char2;
+   let s2 = Bytes.of_string s in
+   for i = 0 to pred (Bytes.length s2) do
+      if Bytes.get s2 i = char1 then Bytes.set s2 i char2;
    done;
-   s2
+   Bytes.to_string s2
 
 (* http://www.codecodex.com/wiki/Replace_or_remove_all_occurrences_of_a_string#OCaml *)
 let str_replace_sub input output =
@@ -193,15 +193,15 @@ let cutlines width s =
 
 let make_upper s =
    if String.length s <= 0 then s else
-   let s' = String.copy s in
-   s'.[0] <- Char.uppercase s.[0];
-   s'
+   let s' = Bytes.of_string s in
+   Bytes.set s' 0 (Char.uppercase_ascii (Bytes.get s' 0));
+   Bytes.to_string s'
 
 let make_upper_2 s =
    if String.length s < 2 then s else
-   let s' = String.copy s in
-   s'.[1] <- Char.uppercase s.[1];
-   s'
+   let s' = Bytes.of_string s in
+   Bytes.set s' 1 (Char.uppercase_ascii (Bytes.get s' 1));
+   Bytes.to_string s'
 
 (**************************************************************)
 (** File manipulation functions *)

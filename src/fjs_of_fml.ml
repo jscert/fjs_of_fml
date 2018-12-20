@@ -12,7 +12,7 @@ open Ppf_helpers
 (*#########################################################################*)
 
 let ppf = Format.std_formatter
-let stdlib_path = ref "stdlib_ml"
+let stdlib_path = ref "stdlib_fml"
 
 (* err_formatter *)
 
@@ -34,7 +34,7 @@ let init_path () =
 let initial_env () =
   Clflags.nopervasives := true;
   (* Stdlib module name, instead of Pervasives *)
-  add_to_list Compenv.implicit_modules "Stdlib";
+  add_to_list Compenv.implicit_modules "Stdlib_fml";
   Compmisc.initial_env ()
 
 
@@ -63,7 +63,7 @@ let _ =
 
    let files = ref [] in
    Arg.parse
-     [ ("-stdlib", Arg.Set_string stdlib_path, "path to look for Stdlib (defaults to 'stdlib_ml')");
+     [ ("-stdlib", Arg.Set_string stdlib_path, "path to look for Stdlib (defaults to 'stdlib_fml')");
        ("-I", Arg.String (add_to_list Clflags.include_dirs), "includes a directory where to look for interface files");
        ("-o", Arg.String (fun s -> Clflags.output_name := Some s), "set the output file");
        ("-debug", Arg.Set debug, "trace the various steps");
