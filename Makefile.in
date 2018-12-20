@@ -114,7 +114,7 @@ ifeq ($(OPAM),opam)
 	@mkdir -p $(FJS_OPAM_LIB_DIR)
 	 @mkdir -p $(FJS_OPAM_STD_LIB)
 	  @cp $(STDLIB_DIR)/*.cm* $(FJS_OPAM_STD_LIB)
-	  @cp $(STDLIB_DIR)/stdlib.js $(FJS_OPAM_STD_LIB)
+	  @cp $(STDLIB_DIR)/stdlib_fml.js $(FJS_OPAM_STD_LIB)
     endif
   endif
 endif
