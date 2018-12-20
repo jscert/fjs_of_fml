@@ -54,7 +54,7 @@ OCAMLDOT_DIR := $(SRC_DIR)/utils/ocamldot
 OCAMLDOT := $(OCAMLDOT_DIR)/ocamldot
 
 FJS_OPAM_LIB_DIR := $(OPAMLIBDIR)/$(NAME)
-FJS_OPAM_STD_LIB := $(FJS_OPAM_LIB_DIR)/stdlib_ml
+FJS_OPAM_STD_LIB := $(FJS_OPAM_LIB_DIR)/stdlib_fml
 FJS_OPAM_TESTS_DIR := $(FJS_OPAM_LIB_DIR)/tests
 BYTES_OPAM := $(addprefix $(OPAMBINDIR)/,$(BYTES))
 NATIVES_OPAM := $(addprefix $(OPAMBINDIR)/,$(NATIVES))
