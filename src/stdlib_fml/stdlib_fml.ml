@@ -149,3 +149,5 @@ val string_concat : string -> string -> string (* + *)
 
  let strlength = Stdlib.String.length;;
  let substring n m s = Stdlib.String.sub s n m;;
+
+module Map = Stdlib.Map

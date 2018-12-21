@@ -32,7 +32,8 @@ let string_of_longident i =
 (****************************************************************)
 (* SHADOWING CHECKER *)
 
-module ShadowMapM = Map406.Make(String)
+module ShadowMapM = Stdlib_fml.Map.Make(String)
+
 type shadow_map = int ShadowMapM.t
 let increment_sm sm id =
   ShadowMapM.update id (option_app (Some 0) (fun i -> Some (i+1))) sm

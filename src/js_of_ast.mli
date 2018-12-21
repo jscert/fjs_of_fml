@@ -7,6 +7,7 @@ module ShadowMapM :
     val is_empty : 'a t -> bool
     val mem : key -> 'a t -> bool
     val add : key -> 'a -> 'a t -> 'a t
+    val update : key -> ('a option -> 'a option) -> 'a t -> 'a t
     val singleton : key -> 'a -> 'a t
     val remove : key -> 'a t -> 'a t
     val merge :
@@ -23,25 +24,24 @@ module ShadowMapM :
     val cardinal : 'a t -> int
     val bindings : 'a t -> (key * 'a) list
     val min_binding : 'a t -> key * 'a
+    val min_binding_opt : 'a t -> (key * 'a) option
     val max_binding : 'a t -> key * 'a
+    val max_binding_opt : 'a t -> (key * 'a) option
     val choose : 'a t -> key * 'a
+    val choose_opt : 'a t -> (key * 'a) option
     val split : key -> 'a t -> 'a t * 'a option * 'a t
     val find : key -> 'a t -> 'a
+    val find_opt : key -> 'a t -> 'a option
+    val find_first : (key -> bool) -> 'a t -> key * 'a
+    val find_first_opt : (key -> bool) -> 'a t -> (key * 'a) option
+    val find_last : (key -> bool) -> 'a t -> key * 'a
+    val find_last_opt : (key -> bool) -> 'a t -> (key * 'a) option
     val map : ('a -> 'b) -> 'a t -> 'b t
     val mapi : (key -> 'a -> 'b) -> 'a t -> 'b t
-    type 'a impl =
-      'a Map406.Make(String).impl =
-        Empty
-      | Node of { l : 'a impl; v : key; d : 'a; r : 'a impl; h : int; }
-    external impl_of_t : 'a t -> 'a impl = "%identity"
-    external t_of_impl : 'a impl -> 'a t = "%identity"
-    val height : 'a impl -> int
-    val create : 'a impl -> key -> 'a -> 'a impl -> 'a impl
-    val bal : 'a impl -> key -> 'a -> 'a impl -> 'a impl
-    val remove_min_binding : 'a impl -> 'a impl
-    val merge' : 'a impl -> 'a impl -> 'a impl
-    val update : key -> ('a option -> 'a option) -> 'a t -> 'a t
-    val find_opt : String.t -> 'a t -> 'a option
+    val to_seq : 'a t -> (key * 'a) Seq.t
+    val to_seq_from : key -> 'a t -> (key * 'a) Seq.t
+    val add_seq : (key * 'a) Seq.t -> 'a t -> 'a t
+    val of_seq : (key * 'a) Seq.t -> 'a t
   end
 type shadow_map = int ShadowMapM.t
 val increment_sm : int ShadowMapM.t -> ShadowMapM.key -> int ShadowMapM.t
@@ -75,7 +75,7 @@ val js_keywords : string list
 val ustr_bb_digits : string array
 val int_to_array : int -> int list
 val int_to_bb_ustr : int -> string
-val ppf_ident_name : String.t -> int ShadowMapM.t -> string
+val ppf_ident_name : ShadowMapM.key -> int ShadowMapM.t -> string
 val ppf_ident : Ident.t -> int ShadowMapM.t -> string
 val ctx_fresh : unit -> string
 val ctx_initial : string
@@ -106,6 +106,9 @@ val tuple_binders :
 val ocaml_doc_tags : string list
 val is_doc_attr : string Asttypes.loc * 'a -> bool
 val is_doc_texpr : Typedtree.expression -> bool
+exception Found_Url of string
+val url : Typedtree.structure_item list -> string
+val set_url : string -> Typedtree.structure_item -> Typedtree.structure_item
 val js_of_structure : Typedtree.structure -> string * string list
 val js_of_structure_item : Typedtree.structure_item -> string * string list
 val js_of_branch :
