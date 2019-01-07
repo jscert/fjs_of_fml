@@ -8,8 +8,8 @@ config.log
 config.status
 _build
 *.byte
-src/stdlib_ml/stdlib.cmi
-src/stdlib_ml/stdlib.cmo
+src/stdlib_fml/stdlib_fml.cmi
+src/stdlib_fml/stdlib_fml.cmo
 *.tar.gz
 *.tar.gz.md5sum.txt
 src/utils/ocamldot/ocamldot
@@ -18,4 +18,5 @@ src/utils/ocamldot/ocamldot.cmo
 src/utils/ocamldot/ocamldot.ml
 src/#*
 *.native
+src/*.cmi
 

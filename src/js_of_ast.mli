@@ -109,7 +109,7 @@ val is_doc_texpr : Typedtree.expression -> bool
 exception Found_Url of string
 val url : Typedtree.structure_item list -> string
 val set_url : string -> Typedtree.structure_item -> Typedtree.structure_item
-val js_of_structure : Typedtree.structure -> string * string list
+val js_of_structure : Typedtree.structure -> string * string list * string
 val js_of_structure_item : Typedtree.structure_item -> string * string list
 val js_of_branch :
   shadow_map -> string -> dest -> Typedtree.case -> string -> string
@@ -132,4 +132,4 @@ val js_of_pattern :
   shadow_map ->
   Typedtree.pattern ->
   string -> string * (string * string) list * int ShadowMapM.t
-val to_javascript : string -> string -> Typedtree.structure -> string
+val to_javascript : string -> string -> Typedtree.structure -> string * string

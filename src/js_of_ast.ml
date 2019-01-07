@@ -369,13 +369,13 @@ let is_doc_texpr e = List.exists is_doc_attr e.exp_attributes
        | Tstr_attribute (l, c) ->
          let get s =
            let words = List.map String.trim (String.split_on_char '@' s) in
-           List.iter (fun s -> 
-               if String.length s > 4 then if String.sub s 0 5  = "esurl" 
-               then List.iter (fun h ->
-                   if String.length h > 4 then if String.sub h 0 5 = "https" then raise (Found_Url h) else ()
-) (String.split_on_char ' ' s)
-                     else ()
-           ) words
+           let en_url_string s =
+             if String.length s > 4 && String.sub s 0 5 = "https" then raise (Found_Url s) else ()
+           in
+           let is_url_id s = String.length s > 4 && String.sub s 0 5  = "esurl" in
+           let has_urlid = List.filter is_url_id words in
+           assert (let les = List.length has_urlid in les = 0 || les = 1);            
+           List.iter (fun s -> List.iter en_url_string (String.split_on_char ' ' s) ) has_urlid
          in
          List.iter get (extract_payload c)
        | _ -> () in
@@ -426,12 +426,13 @@ let rec js_of_structure s =
       | _ -> (List.rev acc, items)
       in
    let open_paths, items = extract_opens [] s.str_items in
-   let uitems = List.map (set_url (url items)) items in 
+   let url_str = url items in 
+   let uitems = List.map (set_url url_str) items in 
    let js_of_struct_items = List.map (fun strct -> js_of_structure_item strct) uitems in
    let contents, namesbound = combine_list_output  js_of_struct_items in
    let prefix = List.fold_left (fun str path -> str ^ "with (" ^ ppf_path path ^ ") {@,") "" open_paths in
    let postfix = List.fold_left (fun str path -> str ^ "@,}// end of with " ^ ppf_path path) "" open_paths in
-   (prefix ^ "@," ^ contents ^ postfix, namesbound)
+   (prefix ^ "@," ^ contents ^ postfix, namesbound, url_str)
 
 and js_of_structure_item s =
   let format_comment c =
@@ -1004,7 +1005,7 @@ and js_of_pattern sm pat obj =
 
 let to_javascript basename module_name typedtree =
   token_register_basename basename;
-  let (content,names_bound) = js_of_structure typedtree in
+  let (content,names_bound, url_str) = js_of_structure typedtree in
   let pre_res = ppf_module_wrap module_name content names_bound in
   let str_ppf = Format.str_formatter in
   begin match !current_mode with
@@ -1026,6 +1027,4 @@ let to_javascript basename module_name typedtree =
        Format.print_close_tag = (fun _ -> ()) };
   end;
   Format.fprintf str_ppf (Scanf.format_from_string pre_res "");
-  Format.flush_str_formatter ()
-
-
+  (Format.flush_str_formatter (), url_str)

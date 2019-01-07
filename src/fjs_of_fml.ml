@@ -90,6 +90,8 @@ let _ =
    let output_file  = prefix_path ^ (get_mode_extension !current_mode) in
    let mlloc_output = prefix_path ^ ".mlloc.js" in
 
+   let url_output = prefix_path ^ ".url.js" in
+
    (*---------------------------------------------------*)
    (* set flags *)
 
@@ -125,8 +127,9 @@ let _ =
 
    let (parsetree, (typedtree,_), module_name) = process_implementation_file ppf sourcefile prefix_path in
    if !current_mode <> Mode_cmi then begin
-     let out = Js_of_ast.to_javascript prefix_file module_name typedtree in
+     let out, url_str = Js_of_ast.to_javascript prefix_file module_name typedtree in
      file_put_contents output_file out;
+     if url_str <> "" then file_put_contents url_output ("var url_spec = " ^ url_str) else ();
      if !current_mode = (Mode_unlogged TokenTrue) 
        then generate_mlloc_file()
    end;
