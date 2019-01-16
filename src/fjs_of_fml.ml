@@ -129,7 +129,7 @@ let _ =
    if !current_mode <> Mode_cmi then begin
      let out, url_str = Js_of_ast.to_javascript prefix_file module_name typedtree in
      file_put_contents output_file out;
-     if url_str <> "" then file_put_contents url_output ("var url_spec = " ^ url_str) else ();
+     if url_str <> "" then file_put_contents url_output ("const url_spec = \"" ^ url_str ^ "\";") else ();
      if !current_mode = (Mode_unlogged TokenTrue) 
        then generate_mlloc_file()
    end;
