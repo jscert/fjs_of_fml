@@ -325,7 +325,7 @@ let generate_logged_enter loc arg_ids ctx newctx sbody =
     | Mode_unlogged _ | Mode_pseudo _ -> (token_start, token_stop, "")
     | Mode_logged ->
       let mk_binding x =
-        Printf.sprintf "{key: \"%s\", val: %s}" x x
+        Printf.sprintf "{key: \"%s\", val: %s, id: %s}" x x x
       in
       let bindings =
         Printf.sprintf "[%s]" (show_list ", " (List.map mk_binding arg_ids))

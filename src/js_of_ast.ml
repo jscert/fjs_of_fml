@@ -360,6 +360,10 @@ let is_doc_texpr e = List.exists is_doc_attr e.exp_attributes
 (****************************************************************)
 (* TRANSLATION *)
 
+let tag_url = "esurl"
+
+let tag_id = "esid"
+
 (* Second version of url update (fonctionnal God forgive me)
    Third version should user a fold on items (i guess)  
   *)
@@ -372,9 +376,8 @@ let is_doc_texpr e = List.exists is_doc_attr e.exp_attributes
            let en_url_string s =
              if String.length s > 4 && String.sub s 0 5 = "https" then raise (Found_Url s) else ()
            in
-           let is_url_id s = String.length s > 4 && String.sub s 0 5  = "esurl" in
+           let is_url_id s = String.length s > 4 && String.sub s 0 5  = tag_url in
            let has_urlid = List.filter is_url_id words in
-           assert (let les = List.length has_urlid in les = 0 || les = 1);            
            List.iter (fun s -> List.iter en_url_string (String.split_on_char ' ' s) ) has_urlid
          in
          List.iter get (extract_payload c)
@@ -389,20 +392,20 @@ let is_doc_texpr e = List.exists is_doc_attr e.exp_attributes
 let set_url url struct_item = 
   let newPstr_eval x = match x.pstr_desc with 
    | Pstr_eval (e, l ) ->
-     (match e with 
+   begin
+     match e with 
      | {pexp_desc = Pexp_constant (Pconst_string  (ss, k))} ->       
-    let words = String.split_on_char '@' ss in
-    let update  = 
-      let set w = if String.length w > 3 && String.sub w 0 4 = "esid" then
-          let tl = List.nth (String.split_on_char ' ' w) 1 in
-          String.concat " " ["esid"; url ^ "#"  ^ tl]
-        else w  in
-      List.map set
-    in
-    let new_ss = Printf.sprintf "%s" (String.concat "@" (update words))
+      let words = String.split_on_char '@' ss in
+      let set w = if String.length w > 3 && String.sub w 0 4 = tag_id then
+       let tag_id_content = List.nth (String.split_on_char ' ' w) 1 in
+       String.concat " " [tag_id; url ^ "#"  ^ tag_id_content] 
+       else w
       in
-    {x with pstr_desc = Pstr_eval ({e with pexp_desc = Pexp_constant (Pconst_string  (new_ss, k))}, l )}
-    | _ -> x)
+      let new_ss = Printf.sprintf "%s" (String.concat "@" (List.map set words)) in
+      { x with pstr_desc = 
+      Pstr_eval ({e with pexp_desc = Pexp_constant (Pconst_string  (new_ss, k))}, l )}
+     | _ -> x
+   end
    | _ -> x
   in
   let newPstr pl = match pl with 
@@ -428,10 +431,11 @@ let rec js_of_structure s =
    let open_paths, items = extract_opens [] s.str_items in
    let url_str = url items in 
    let uitems = List.map (set_url url_str) items in 
-   let js_of_struct_items = List.map (fun strct -> js_of_structure_item strct) uitems in
+   let js_of_struct_items = List.map (fun strct -> let str, str_list, _ = js_of_structure_item strct in (str, str_list)) uitems in
    let contents, namesbound = combine_list_output  js_of_struct_items in
    let prefix = List.fold_left (fun str path -> str ^ "with (" ^ ppf_path path ^ ") {@,") "" open_paths in
    let postfix = List.fold_left (fun str path -> str ^ "@,}// end of with " ^ ppf_path path) "" open_paths in
+   Printf.printf "\tcontents : %s\n" contents;
    (prefix ^ "@," ^ contents ^ postfix, namesbound, url_str)
 
 and js_of_structure_item s =
@@ -442,24 +446,39 @@ and js_of_structure_item s =
   match s.str_desc with
   | Tstr_eval (e, _)     -> 
      let str = Printf.sprintf "%s" @@ js_of_expression ShadowMapM.empty ctx_initial Dest_ignore e in
-     (str, [])
+     (str, [], None)
   | Tstr_value (_, vb_l) ->
-     combine_list_output (~~ List.map vb_l (fun vb ->
-      let comment =
+     let comment vb = 
        try 
         let id, pl = List.find (fun (id, _) -> id.txt = "ocaml.doc") vb.vb_attributes in
         let payl = Printf.sprintf "%s" (String.concat " "  (extract_payload pl)) in
-        Printf.sprintf "%s" (format_comment payl) 
-       with Not_found -> ""
+        let get_tag_id_content p =
+          let words = String.split_on_char '@' p in
+          let get w = if String.length w > 3 && String.sub w 0 4 = tag_id then
+           let tag_id_content = List.nth (String.split_on_char ' ' w) 1 in
+           Some tag_id_content else None in
+          List.filter (function Some _ -> true | _ -> false) (List.map get  words)
+        in
+        let list_tag_content = get_tag_id_content payl in
+        let l = List.length (list_tag_content) in
+        assert ( l = 1 || l = 0);
+        let com_content = Printf.sprintf "%s" (format_comment payl) in
+        if l = 0 then (com_content, None) else (com_content, List.hd list_tag_content)
+       with Not_found -> ("", None)
       in
+      let tag = ref (Some "") in
+     let str, str_list = combine_list_output (~~ List.map vb_l (fun vb -> 
         let id = ppf_ident_of_pat ShadowMapM.empty vb.vb_pat in
         if ident_is_shadowing s.str_env id then error ~loc "Variable shadowing not permitted at toplevel"
         else
-        let sbody = js_of_expression_inline_or_wrap ShadowMapM.empty ctx_initial vb.vb_expr in
-         let s = ppf_value id sbody comment in
-        (s, [id])))
+        let comm = comment vb in 
+        tag := snd comm;
+        let sbody = js_of_expression_inline_or_wrap ShadowMapM.empty ctx_initial !tag vb.vb_expr in
+         let s = ppf_value id sbody (fst comm) in          
+        (s, [id]))) in
+     (str, str_list, !tag)
   | Tstr_type (rec_flag, decls) ->
-     combine_list_output (~~ List.map decls (fun decl -> 
+     let str, str_list = combine_list_output (~~ List.map decls (fun decl -> 
         match decl.typ_type.type_kind with
         | Type_variant cstr_decls ->
            let styp = decl.typ_name.txt in
@@ -474,9 +493,10 @@ and js_of_structure_item s =
               (sbody, [cstr_name])
               ))
         | _ -> ("", [])
-        ))
-  | Tstr_open       _  -> ("",[]) (* Handle modules by use of multiple compilation/linking *)
-  | Tstr_modtype    _  -> ("",[])
+        )) in
+     (str, str_list, None)
+  | Tstr_open       _  -> ("",[], None) (* Handle modules by use of multiple compilation/linking *)
+  | Tstr_modtype    _  -> ("",[], None)
   | Tstr_module     b  -> out_of_scope loc "modules" (* Partial implementation present in commit e1e6e4b *)
   | Tstr_primitive  _  -> out_of_scope loc "primitive functions"
   | Tstr_typext     _  -> out_of_scope loc "type extensions"
@@ -487,7 +507,7 @@ and js_of_structure_item s =
   | Tstr_include    _  -> out_of_scope loc "includes"
   | Tstr_attribute (l, c) -> if l.txt = "ocaml.text" then
       let payl = ppf_comment (String.concat " " (extract_payload c)) in
-      (format_comment payl, []) else  out_of_scope loc "attributes"
+      (format_comment payl, [], None) else  out_of_scope loc "attributes"
 
 (* Translates each pattern/subexpression pair branch of a match expression *)
 and js_of_branch sm ctx dest b eobj =
@@ -498,7 +518,7 @@ and js_of_branch sm ctx dest b eobj =
   generate_logged_case b.c_lhs.pat_loc spat binders ctx newctx sbody need_break
   (* there is no need to propagate the updated [sm] back up the tree, as pattern bound only in [sbody] *)
 
-and js_of_expression_inline_or_wrap sm ctx e =
+and js_of_expression_inline_or_wrap sm ctx id_option e =
   try 
     js_of_expression sm ctx Dest_inline e
   with Not_good_for_dest_inline ->
@@ -521,7 +541,7 @@ and js_of_expression_naming_argument_if_non_variable sm ctx obj name_prefix =
   end
 
 and js_of_expression (sm : shadow_map) ctx dest e =
-  let inline_of_wrap = js_of_expression_inline_or_wrap sm ctx in (* shorthand *)
+  let inline_of_wrap = js_of_expression_inline_or_wrap sm ctx None in (* shorthand *)
   let loc = e.exp_loc in
   let apply_dest' = apply_dest loc in
   match e.exp_desc with
