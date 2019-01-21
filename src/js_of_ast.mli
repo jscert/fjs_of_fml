@@ -112,21 +112,21 @@ val set_url : string -> Typedtree.structure_item -> Typedtree.structure_item
 val js_of_structure : Typedtree.structure -> string * string list * string
 val js_of_structure_item : Typedtree.structure_item -> string * string list * string option
 val js_of_branch :
-  shadow_map -> string -> dest -> Typedtree.case -> string -> string
+  shadow_map -> string -> dest -> Typedtree.case -> string option -> string -> string
 val js_of_expression_inline_or_wrap :
   int ShadowMapM.t -> string -> string option -> Typedtree.expression -> string
 val js_of_expression_wrapped :
-  int ShadowMapM.t -> string -> Typedtree.expression -> string
+  int ShadowMapM.t -> string -> string option -> Typedtree.expression -> string
 val js_of_expression_naming_argument_if_non_variable :
   int ShadowMapM.t ->
-  string -> Typedtree.expression -> string -> string * string
+  string -> Typedtree.expression -> string option -> string -> string * string
 val js_of_expression :
-  int ShadowMapM.t -> string -> dest -> Typedtree.expression -> string
+  int ShadowMapM.t -> string -> dest -> string option -> Typedtree.expression -> string
 val js_of_let_pattern :
   shadow_map ->
   shadow_map ->
   string ->
-  Typedtree.value_binding ->
+  Typedtree.value_binding -> string option ->
   Asttypes.rec_flag -> string * string * shadow_map
 val js_of_pattern :
   shadow_map ->

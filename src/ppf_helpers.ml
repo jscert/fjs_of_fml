@@ -317,7 +317,11 @@ let generate_logged_apply loc ctx sbody =
 
 (*--------- enter function body ---------*)
 
-let generate_logged_enter loc arg_ids ctx newctx sbody = 
+let generate_logged_enter loc arg_ids ctx newctx tag_id_option sbody =
+ (* let test_tag_id_op = function
+ | None -> ()
+ | Some id -> Printf.printf "\t>%s<\n" id in
+  test_tag_id_op tag_id_option;*)
   let (token_start, token_stop, token_loc) = token_fresh !current_mode loc in
   let (shead1, shead2, sintro) =
     match !current_mode with
@@ -325,7 +329,9 @@ let generate_logged_enter loc arg_ids ctx newctx sbody =
     | Mode_unlogged _ | Mode_pseudo _ -> (token_start, token_stop, "")
     | Mode_logged ->
       let mk_binding x =
-        Printf.sprintf "{key: \"%s\", val: %s, id: %s}" x x x
+        match tag_id_option with 
+          | None -> Printf.sprintf "{key: \"%s\", val: %s}" x x 
+          | Some tid -> Printf.sprintf "{key: \"%s\", val: %s, tag_id: %s}" x x tid 
       in
       let bindings =
         Printf.sprintf "[%s]" (show_list ", " (List.map mk_binding arg_ids))

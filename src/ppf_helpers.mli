@@ -66,5 +66,5 @@ val generate_logged_let :
   Location.t -> string list -> string -> string -> string -> string -> string
 val generate_logged_apply : Location.t -> string -> string -> string
 val generate_logged_enter :
-  Location.t -> string list -> string -> string -> string -> string
+  Location.t -> string list -> string -> string -> string option -> string -> string
 val generate_logged_return : Location.t -> string -> string -> string

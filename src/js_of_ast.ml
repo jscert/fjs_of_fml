@@ -435,7 +435,7 @@ let rec js_of_structure s =
    let contents, namesbound = combine_list_output  js_of_struct_items in
    let prefix = List.fold_left (fun str path -> str ^ "with (" ^ ppf_path path ^ ") {@,") "" open_paths in
    let postfix = List.fold_left (fun str path -> str ^ "@,}// end of with " ^ ppf_path path) "" open_paths in
-   Printf.printf "\tcontents : %s\n" contents;
+   (*Printf.printf "\tcontents : %s\n" contents;*)
    (prefix ^ "@," ^ contents ^ postfix, namesbound, url_str)
 
 and js_of_structure_item s =
@@ -445,7 +445,7 @@ and js_of_structure_item s =
   let loc = s.str_loc in
   match s.str_desc with
   | Tstr_eval (e, _)     -> 
-     let str = Printf.sprintf "%s" @@ js_of_expression ShadowMapM.empty ctx_initial Dest_ignore e in
+     let str = Printf.sprintf "%s" @@ js_of_expression ShadowMapM.empty ctx_initial Dest_ignore None e in
      (str, [], None)
   | Tstr_value (_, vb_l) ->
      let comment vb = 
@@ -456,7 +456,7 @@ and js_of_structure_item s =
           let words = String.split_on_char '@' p in
           let get w = if String.length w > 3 && String.sub w 0 4 = tag_id then
            let tag_id_content = List.nth (String.split_on_char ' ' w) 1 in
-           Some tag_id_content else None in
+           Some (String.trim tag_id_content) else None in
           List.filter (function Some _ -> true | _ -> false) (List.map get  words)
         in
         let list_tag_content = get_tag_id_content payl in
@@ -510,38 +510,38 @@ and js_of_structure_item s =
       (format_comment payl, [], None) else  out_of_scope loc "attributes"
 
 (* Translates each pattern/subexpression pair branch of a match expression *)
-and js_of_branch sm ctx dest b eobj =
+and js_of_branch sm ctx dest b tag_id_option eobj =
   let spat, binders, sm = js_of_pattern sm b.c_lhs eobj in
   let newctx = if binders = [] then ctx else ctx_fresh() in
-  let sbody = js_of_expression sm newctx dest b.c_rhs in
+  let sbody = js_of_expression sm newctx dest tag_id_option b.c_rhs in
   let need_break = (dest <> Dest_return) in
   generate_logged_case b.c_lhs.pat_loc spat binders ctx newctx sbody need_break
   (* there is no need to propagate the updated [sm] back up the tree, as pattern bound only in [sbody] *)
 
-and js_of_expression_inline_or_wrap sm ctx id_option e =
-  try 
-    js_of_expression sm ctx Dest_inline e
+and js_of_expression_inline_or_wrap sm ctx tag_id_option e =
+  try
+    js_of_expression sm ctx Dest_inline tag_id_option e
   with Not_good_for_dest_inline ->
-    js_of_expression_wrapped sm ctx e
+    js_of_expression_wrapped sm ctx tag_id_option e
 
-and js_of_expression_wrapped sm ctx e = (* dest = Dest_return *)
-  ppf_lambda_wrap (js_of_expression sm ctx Dest_return e)
+and js_of_expression_wrapped sm ctx tag_id_option e = (* dest = Dest_return *)
+  ppf_lambda_wrap (js_of_expression sm ctx Dest_return tag_id_option e)
 
-and js_of_expression_naming_argument_if_non_variable sm ctx obj name_prefix =
+and js_of_expression_naming_argument_if_non_variable sm ctx obj tag_id_option name_prefix =
   if is_mode_pseudo() then begin
-    "", js_of_expression sm ctx Dest_ignore obj
+    "", js_of_expression sm ctx Dest_ignore tag_id_option obj
   end else begin
     match obj.exp_desc with
     | Texp_ident (path, ident,  _) -> 
         "", (js_of_path_longident sm path ident)
     | _ ->  (* generate  var id = sexp;  *)
         let id = id_fresh name_prefix in
-        let sintro = js_of_expression sm ctx (Dest_assign (id, false)) obj in
+        let sintro = js_of_expression sm ctx (Dest_assign (id, false)) tag_id_option obj in
         (sintro ^ "@,"), id
   end
 
-and js_of_expression (sm : shadow_map) ctx dest e =
-  let inline_of_wrap = js_of_expression_inline_or_wrap sm ctx None in (* shorthand *)
+and js_of_expression (sm : shadow_map) ctx dest tag_id_option e =
+  let inline_of_wrap = js_of_expression_inline_or_wrap sm ctx tag_id_option in (* shorthand *)
   let loc = e.exp_loc in
   let apply_dest' = apply_dest loc in
   match e.exp_desc with
@@ -561,7 +561,7 @@ and js_of_expression (sm : shadow_map) ctx dest e =
     reject_inline dest;
     let (ids, sdecl, sm') = begin match vb_l with
       | [ { vb_pat = { pat_desc = Tpat_tuple pl }; vb_expr = obj } ] -> (* binding tuples *)
-          let (sintro, stupleobj) = js_of_expression_naming_argument_if_non_variable sm ctx obj "_tuple_arg_" in
+          let (sintro, stupleobj) = js_of_expression_naming_argument_if_non_variable sm ctx obj tag_id_option "_tuple_arg_" in
           let (binders, sm') = tuple_binders stupleobj sm pl in
           let ids = List.map fst binders in
           let sdecl =
@@ -574,7 +574,7 @@ and js_of_expression (sm : shadow_map) ctx dest e =
       | [ { vb_pat = { pat_desc = Tpat_record (args, closed_flag) }; vb_expr = obj } ] ->
           (* binding records -- used in JsCommon.ml *)
           (* args : (Longident.t loc * label_description * pattern) list *)
-         let (sintro, seobj) = js_of_expression_naming_argument_if_non_variable sm ctx obj "_record_arg_" in
+         let (sintro, seobj) = js_of_expression_naming_argument_if_non_variable sm ctx obj tag_id_option "_record_arg_" in
          let bind sm' (arg_loc,label_descr,pat) =
             let name = label_descr.lbl_name in
             match pat.pat_desc with
@@ -598,14 +598,14 @@ and js_of_expression (sm : shadow_map) ctx dest e =
         (* vb subexpressions are in the context of overall expression: use constant sm for this,
            but fold over a changing new_sm for the created bindings *)
         let folder vb (sids, jsexprs, new_sm) =
-          let (sid, jsexpr, new_sm) = js_of_let_pattern sm new_sm ctx vb recur in
+          let (sid, jsexpr, new_sm) = js_of_let_pattern sm new_sm ctx vb tag_id_option recur in
           (sid::sids, jsexpr::jsexprs, new_sm)
         in
         let (ids, sdecls, new_sm) = List.fold_right folder vb_l ([], [], sm) in
         let sdecl = String.concat lin1 sdecls in
         (ids, sdecl, new_sm)
       end in
-    let sbody = js_of_expression sm' ctx dest e in
+    let sbody = js_of_expression sm' ctx dest tag_id_option e in
     let newctx = ctx_fresh() in
     let sexp = generate_logged_let loc ids ctx newctx sdecl sbody in
     sexp
@@ -647,8 +647,8 @@ and js_of_expression (sm : shadow_map) ctx dest e =
        *)
     let stuplebindings = "" in
     let newctx = ctx_fresh() in
-    let sbody = js_of_expression sm newctx Dest_return body in
-    let sexp = generate_logged_enter body.exp_loc arg_ids ctx newctx sbody in
+    let sbody = js_of_expression sm newctx Dest_return tag_id_option body in
+    let sexp = generate_logged_enter body.exp_loc arg_ids ctx newctx tag_id_option sbody in
     apply_dest' ctx dest (stuplebindings ^ sexp)
 
   | Texp_apply (f, exp_l) when is_doc_texpr e -> 
@@ -710,7 +710,7 @@ and js_of_expression (sm : shadow_map) ctx dest e =
       let stuplebindings = ppf_match_binders tuple_bindings in
 
       let newctx = ctx_fresh() in
-      let sbody = js_of_expression sm newctx Dest_return body in
+      let sbody = js_of_expression sm newctx Dest_return tag_id_option body in
 
       let (token_start1, token_stop1, _token_loc) = token_fresh !current_mode loc in 
       let (token_start2, token_stop2, _token_loc) = token_fresh !current_mode loc in 
@@ -818,8 +818,8 @@ and js_of_expression (sm : shadow_map) ctx dest e =
 
   | Texp_match (obj, l, [], Total) ->
      reject_inline dest;
-     let (sintro, sarg) = js_of_expression_naming_argument_if_non_variable sm ctx obj "_switch_arg_" in
-     let sbranches = String.concat "@," (List.map (fun b -> js_of_branch sm ctx dest b sarg) l) in
+     let (sintro, sarg) = js_of_expression_naming_argument_if_non_variable sm ctx obj tag_id_option "_switch_arg_" in
+     let sbranches = String.concat "@," (List.map (fun b -> js_of_branch sm ctx dest b tag_id_option sarg) l) in
      let arg_is_constant = exp_type_is_constant obj in
      generate_logged_match loc ctx sintro sarg sbranches arg_is_constant
 
@@ -872,13 +872,13 @@ and js_of_expression (sm : shadow_map) ctx dest e =
      let (sintro, se1) = 
        match !current_mode with
        | Mode_logged -> 
-           let (sintro, sobj) = js_of_expression_naming_argument_if_non_variable sm ctx e1 "_if_arg_" in
+           let (sintro, sobj) = js_of_expression_naming_argument_if_non_variable sm ctx e1 tag_id_option "_if_arg_" in
            (sintro, sobj)
        | _ ->  ("", inline_of_wrap e1)
        in
-     generate_logged_if loc ctx sintro se1 (js_of_expression sm ctx dest e2) (js_of_expression sm ctx dest e3)
+     generate_logged_if loc ctx sintro se1 (js_of_expression sm ctx dest tag_id_option e2) (js_of_expression sm ctx dest tag_id_option e3)
   | Texp_sequence (e1, e2) -> 
-     ppf_sequence (inline_of_wrap e1) (js_of_expression sm ctx dest e2)
+     ppf_sequence (inline_of_wrap e1) (js_of_expression sm ctx dest tag_id_option e2)
   | Texp_while      (cd, body)        -> out_of_scope loc "while"
     (* ppf_while (js_of_expression cd) (js_of_expression body) *)
   | Texp_for        (id, _, st, ed, fl, body) -> out_of_scope loc "for"
@@ -933,7 +933,7 @@ and js_of_expression (sm : shadow_map) ctx dest e =
           } in
       let exp = 
         mk_exp (Texp_function { arg_label = Nolabel; param; cases=[thecase]; partial = Total} ) in
-      js_of_expression sm ctx dest exp
+      js_of_expression sm ctx dest tag_id_option exp
 
   | Texp_assert      _                -> out_of_scope loc "assert (please use assert ppx syntax)"
   | Texp_match      (_,_,_, Partial)  -> out_of_scope loc "partial matching"
@@ -954,7 +954,7 @@ and js_of_expression (sm : shadow_map) ctx dest e =
   | _                                 -> out_of_scope loc "Unknown js_of_expression Texp value"
 
 (* returns the name bound and the code that assigns a value to this name *)
-and js_of_let_pattern sm new_sm ctx vb recur =
+and js_of_let_pattern sm new_sm ctx vb tag_id_option recur =
   let { vb_pat = pat; vb_expr = expr } = vb in
   let id =
     match pat.pat_desc with
@@ -974,7 +974,7 @@ and js_of_let_pattern sm new_sm ctx vb recur =
   let new_sm = update_shadow_map new_sm pat.pat_env id in
   let sid = ppf_ident id new_sm in
   let sm = if recur = Recursive then update_shadow_map sm pat.pat_env id else sm in
-  let js_expr = js_of_expression sm ctx (Dest_assign (sid, false (*FIXME*))) expr in
+  let js_expr = js_of_expression sm ctx (Dest_assign (sid, false (*FIXME*))) tag_id_option expr in
   (sid, js_expr, new_sm)
 
   (* LATER: for   let (x,y) = e,  encode as  translate(e,assign z); x = z[0]; y=z[1] 
