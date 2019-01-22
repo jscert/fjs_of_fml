@@ -318,24 +318,21 @@ let generate_logged_apply loc ctx sbody =
 (*--------- enter function body ---------*)
 
 let generate_logged_enter loc arg_ids ctx newctx tag_id_option sbody =
- (* let test_tag_id_op = function
- | None -> ()
- | Some id -> Printf.printf "\t>%s<\n" id in
-  test_tag_id_op tag_id_option;*)
   let (token_start, token_stop, token_loc) = token_fresh !current_mode loc in
   let (shead1, shead2, sintro) =
     match !current_mode with
     | Mode_cmi -> assert false
     | Mode_unlogged _ | Mode_pseudo _ -> (token_start, token_stop, "")
     | Mode_logged ->
-      let mk_binding x =
-        match tag_id_option with 
-          | None -> Printf.sprintf "{key: \"%s\", val: %s}" x x 
-          | Some tid -> Printf.sprintf "{key: \"%s\", val: %s, tag_id: %s}" x x tid 
+      let mk_binding x = Printf.sprintf "{key: \"%s\", val: %s}" x x in
+      let bindings = 
+      match tag_id_option with
+       | None -> Printf.sprintf "[%s]" (show_list ", " (List.map mk_binding arg_ids))
+       | Some tid ->
+          let tid_binding =
+            Printf.sprintf "{key: \"%s\", val: \"%s\"}" "_tag_id_" (str_replace_sub "%" "%%" tid) in
+          Printf.sprintf "[%s]" (show_list ", " (tid_binding::(List.map mk_binding arg_ids)))
       in
-      let bindings =
-        Printf.sprintf "[%s]" (show_list ", " (List.map mk_binding arg_ids))
-      in 
       let sintro = Printf.sprintf "var %s = ctx_push(%s, %s);@,log_event(%s, %s, \"enter\");@,"
         newctx ctx bindings token_loc newctx in
       ("", "", sintro)
