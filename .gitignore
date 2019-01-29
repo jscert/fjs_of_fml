@@ -19,4 +19,4 @@ src/utils/ocamldot/ocamldot.ml
 src/#*
 *.native
 src/*.cmi
-
+*.url.js

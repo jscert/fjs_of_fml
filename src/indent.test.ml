@@ -3,7 +3,7 @@ open Str
 
 let ppf = str_formatter
 let re = regexp "\n\ *\n"
-  
+
 let record ppf name names exps =
   let rec aux ppf (names, exp) = match (names, exp) with
     | [], [] -> () 
@@ -17,9 +17,9 @@ let exps  = ["1" ; "2" ; "3" ]
 let rm_lf2 s =
   global_replace re "\n" s
 
-    
+
 let f () =
   let ippf = get_formatter_out_functions () in
   record ppf "bli" names exps ;
   rm_lf2 (flush_str_formatter ())
-  
+

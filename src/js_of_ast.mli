@@ -108,7 +108,6 @@ val is_doc_attr : string Asttypes.loc * 'a -> bool
 val is_doc_texpr : Typedtree.expression -> bool
 exception Found_Url of string
 val url : Typedtree.structure_item list -> string
-val set_url : string -> Typedtree.structure_item -> Typedtree.structure_item
 val js_of_structure : Typedtree.structure -> string * string list * string
 val js_of_structure_item : Typedtree.structure_item -> string * string list * string option
 val js_of_branch :

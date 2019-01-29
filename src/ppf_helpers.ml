@@ -11,7 +11,7 @@ module L = Logged (Token_generator) (struct let size = 256 end)
 (**
  * Before-hand definitions of Pretty-Printer-Format for converting ocaml
  * to ECMAScript, therefore all of them are in a single place.
- *)
+*)
 
 let ppf_lambda_wrap s =
   Printf.sprintf "(function () {@;<1 2>@[<v 0>%s@]@,}())@," s
@@ -21,12 +21,12 @@ let ppf_function args body=
 
 let ppf_apply f args =
   Printf.sprintf "@[<hov 2>%s(@,%s)@]"
-                 f args
+    f args
 
 let ppf_apply_infix f arg1 arg2 =
   Printf.sprintf "@[<hov 0>(%s@ %s %s)@]"
-                 arg1 f arg2
-  (* todo: only put parentheses if needed *)
+    arg1 f arg2
+(* todo: only put parentheses if needed *)
 
 let ppf_match_case c =
   Printf.sprintf "case %s" c
@@ -35,8 +35,8 @@ let ppf_match_case c =
 let ppf_match_binders binders =
   if binders = [] then "" else
     let binds = show_list "@," (List.map
-      (fun (id,se) -> Printf.sprintf "var %s = %s;" id se) binders) in
-  Printf.sprintf "@[<hov 2>%s@]" binds
+                                  (fun (id,se) -> Printf.sprintf "var %s = %s;" id se) binders) in
+    Printf.sprintf "@[<hov 2>%s@]" binds
 
 let ppf_let_tuple ids sbody =
   assert (ids <> []);
@@ -47,18 +47,18 @@ let ppf_let_record ids sbody =
 
 let ppf_array values =
   Printf.sprintf "[%s]"
-                 values
+    values
 
 let ppf_tuple = ppf_array
 
 let ppf_sequence exp1 exp2 =
   Printf.sprintf "%s;@,%s"
-                 exp1 exp2
+    exp1 exp2
 
 let ppf_while cd body =
   let s =
     Printf.sprintf "@[<v 2>while(%s) {@;<1 2>%s@,@]}"
-                   cd body
+      cd body
   in ppf_lambda_wrap s
 
 let ppf_for id start ed flag body =
@@ -70,7 +70,7 @@ let ppf_for id start ed flag body =
     | Downto -> ">=" in
   let s =
     Printf.sprintf "@[<v 2>for (%s = %s ; %s %s %s ; %s%s) {@,%s@]@,}"
-                   id start id (fl_to_symbl flag) ed (fl_to_string flag) id body
+      id start id (fl_to_symbl flag) ed (fl_to_string flag) id body
   in ppf_lambda_wrap s
 
 (*let ppf_single_cstr tag =
@@ -87,14 +87,14 @@ let ppf_cstrs styp cstr_name rest current_mode =
     | Mode_cmi -> assert false
     | Mode_unlogged _ | Mode_pseudo _ -> ""
     | Mode_logged -> Printf.sprintf "type: \"%s\", " styp
-    in
+  in
   Printf.sprintf "{@[<v 2>%stag: \"%s\"%s %s@]}" (* TODO: cleanup *)
     styp_full cstr_name comma rest
 
 let ppf_cstrs_fct cstr_fullname args =
   if is_mode_pseudo() && args = [] 
-    then cstr_fullname 
-    else ppf_apply cstr_fullname (show_list ",@ " args)
+  then cstr_fullname 
+  else ppf_apply cstr_fullname (show_list ",@ " args)
 
 let ppf_record llde =
   let rec aux acc = function
@@ -110,8 +110,8 @@ let ppf_decl id expr = Printf.sprintf "@[<v 0>%s: %s,@,@]" id expr
 
 let ppf_pat_array id_list array_expr =
   Printf.sprintf "var __%s = %s;@," "array" array_expr ^
-    List.fold_left2 (fun acc (name, exp_type) y -> acc ^ Printf.sprintf "@[<v 0>var %s = __%s[%d];@,@]" name "array" y)
-                    "" id_list @@ range 0 (List.length id_list - 1)
+  List.fold_left2 (fun acc (name, exp_type) y -> acc ^ Printf.sprintf "@[<v 0>var %s = __%s[%d];@,@]" name "array" y)
+    "" id_list @@ range 0 (List.length id_list - 1)
 
 let ppf_field_access expr field =
   Printf.sprintf "%s.%s" expr field
@@ -120,7 +120,7 @@ let ppf_comment c = Printf.sprintf "@[<v 0>/*@,%s@,*/@]" c
 
 let ppf_value id body comment = 
   if comment = "" then Printf.sprintf "@[<v 0>var %s = %s;@]" id body else
-  Printf.sprintf "@[<v 0>/*@,%s@,*/@,var %s = %s;@]" comment id body
+    Printf.sprintf "@[<v 0>/*@,%s@,*/@,var %s = %s;@]" comment id body
 
 let ppf_path =
   Path.name
@@ -170,13 +170,13 @@ let token_register_basename basename =
 let token_fresh =
   let r = ref 0 in
   fun mode loc -> (
-    incr r; 
-    Hashtbl.add token_locs (!r) (pos_pair_of_loc loc);
-    (* if mode = Mode_unlogged TokenFalse then ("", "", "") else begin end*)
-    let token_start = Printf.sprintf "@{<%d>" !r in
-    let token_stop = "@}" in
-    let token_loc = Printf.sprintf "\"%s.js\", %d" !token_basename_ref !r in 
-    (token_start, token_stop, token_loc)
+      incr r; 
+      Hashtbl.add token_locs (!r) (pos_pair_of_loc loc);
+      (* if mode = Mode_unlogged TokenFalse then ("", "", "") else begin end*)
+      let token_start = Printf.sprintf "@{<%d>" !r in
+      let token_stop = "@}" in
+      let token_loc = Printf.sprintf "\"%s.js\", %d" !token_basename_ref !r in 
+      (token_start, token_stop, token_loc)
     )
 
 
@@ -190,7 +190,7 @@ let token_fresh =
 
 let ppf_ifthenelse arg iftrue iffalse =
   Printf.sprintf "@[<v 0>if (%s) {@;<1 2>@[<v 0>%s@]@,} else {@;<1 2>@[<hv 0>%s@]@,}@]"
-                 arg iftrue iffalse
+    arg iftrue iffalse
 
 let generate_logged_if loc ctx sintro sarg siftrue siffalse =
   (* sintro is not empty only in the logged case,
@@ -199,16 +199,16 @@ let generate_logged_if loc ctx sintro sarg siftrue siffalse =
   match !current_mode with
   | Mode_cmi -> assert false
   | Mode_unlogged _ | Mode_pseudo _ ->
-     let sarg_with_token = Printf.sprintf "%s%s%s" token_start sarg token_stop in
-     ppf_ifthenelse sarg_with_token siftrue siffalse
+    let sarg_with_token = Printf.sprintf "%s%s%s" token_start sarg token_stop in
+    ppf_ifthenelse sarg_with_token siftrue siffalse
   | Mode_logged ->
-     let sevent = Printf.sprintf "%slog_event(%s, %s, \"if\");@,"
+    let sevent = Printf.sprintf "%slog_event(%s, %s, \"if\");@,"
         sintro token_loc ctx in
-     let sbody = ppf_ifthenelse sarg siftrue siffalse in
-     sevent ^ sbody
+    let sbody = ppf_ifthenelse sarg siftrue siffalse in
+    sevent ^ sbody
 
 
-  (* TODO: extend the ctx with if_arg *)
+(* TODO: extend the ctx with if_arg *)
 
 (*--------- match ---------*)
 
@@ -221,19 +221,19 @@ let generate_logged_case loc spat binders ctx newctx sbody need_break =
     match !current_mode with
     | Mode_cmi -> assert false
     | Mode_pseudo _ ->
-        let args = List.map fst binders in
-        let spat = (* LATER: use a cleaner separation with Case of (cstr,args) | Default *)
-          if spat = "case ::" then begin
-            let (x,y) = match args with [x;y] -> (x,y) | _ -> assert false in
-            Printf.sprintf "case (%s::%s)" x y
-          end else if args = [] then begin
-            spat 
-          end else begin
-            ppf_apply spat (show_list ",@ " args)
-          end in
-        (token_start, spat, "", token_stop)
+      let args = List.map fst binders in
+      let spat = (* LATER: use a cleaner separation with Case of (cstr,args) | Default *)
+        if spat = "case ::" then begin
+          let (x,y) = match args with [x;y] -> (x,y) | _ -> assert false in
+          Printf.sprintf "case (%s::%s)" x y
+        end else if args = [] then begin
+          spat 
+        end else begin
+          ppf_apply spat (show_list ",@ " args)
+        end in
+      (token_start, spat, "", token_stop)
     | Mode_unlogged _ ->
-        (token_start, spat, sbinders_common(), token_stop)
+      (token_start, spat, sbinders_common(), token_stop)
     | Mode_logged ->
       let ids = List.map fst binders in
       let mk_binding x =
@@ -247,9 +247,9 @@ let generate_logged_case loc spat binders ctx newctx sbody need_break =
         else Printf.sprintf "var %s = ctx_push(%s, %s);@," newctx ctx bindings
       in
       let sintro = Printf.sprintf "%slog_event(%s, %s, \"case\");@,"
-        spreintro token_loc newctx in
+          spreintro token_loc newctx in
       ("", spat, sbinders_common(), sintro)
-    in
+  in
   (Printf.sprintf "@[<v 0>%s%s:%s%s@;<1 2>@[<v 0>%s%s@]@]"
      shead spat sbinders sintro sbody
      (if need_break then "@,break;" else ""))
@@ -261,9 +261,9 @@ let ppf_match sintro sarg sbranches =
     | Mode_pseudo _ -> (*"match"*) "switch", sbranches
     | Mode_unlogged _ -> "switch", sbranches
     | Mode_logged -> "switch", sbranches 
-      (* TODO: put back if there is not already a default case:
-          ^ "@,default: throw \"No matching case for switch\";" *)
-    in
+    (* TODO: put back if there is not already a default case:
+        ^ "@,default: throw \"No matching case for switch\";" *)
+  in
   Printf.sprintf "%s%s (%s) {@;<1 2>@[<v 0>%s@]@,}@,"
     sintro sswitch sarg sbranches
 
@@ -277,14 +277,14 @@ let generate_logged_match loc ctx sintro sarg sbranches arg_is_constant =
   match !current_mode with
   | Mode_cmi -> assert false
   | Mode_unlogged _ | Mode_pseudo _ ->
-     let sarg_with_token = Printf.sprintf "%s%s%s" token_start sarg token_stop in
-     ppf_match sintro sarg_with_token sbranches 
+    let sarg_with_token = Printf.sprintf "%s%s%s" token_start sarg token_stop in
+    ppf_match sintro sarg_with_token sbranches 
   | Mode_logged ->
-     let sbody = ppf_match "" sarg sbranches in
-     Printf.sprintf "%slog_event(%s, %s, \"switch\");@,%s"
-        sintro token_loc ctx sbody
+    let sbody = ppf_match "" sarg sbranches in
+    Printf.sprintf "%slog_event(%s, %s, \"switch\");@,%s"
+      sintro token_loc ctx sbody
 
-  (* TODO: extend the ctx with switch_arg *)
+(* TODO: extend the ctx with switch_arg *)
 
 (*--------- let ---------*)
 
@@ -293,7 +293,7 @@ let generate_logged_let loc ids ctx newctx sdecl sbody =
   match !current_mode with
   | Mode_cmi -> assert false
   | Mode_unlogged _ | Mode_pseudo _ -> 
-     Printf.sprintf "%s%s%s@,%s" token_start sdecl token_stop sbody  
+    Printf.sprintf "%s%s%s@,%s" token_start sdecl token_stop sbody  
   | Mode_logged ->
     let mk_binding x =
       Printf.sprintf "{key: \"%s\", val: %s}" x x in
@@ -310,9 +310,9 @@ let generate_logged_apply loc ctx sbody =
   match !current_mode with
   | Mode_cmi -> assert false
   | Mode_unlogged _ | Mode_pseudo _ ->
-     Printf.sprintf "%s%s%s" token_start sbody token_stop
+    Printf.sprintf "%s%s%s" token_start sbody token_stop
   | Mode_logged ->
-     Printf.sprintf "log_event(%s, %s, \"call\");@,%s" token_loc ctx sbody
+    Printf.sprintf "log_event(%s, %s, \"call\");@,%s" token_loc ctx sbody
 
 
 (*--------- enter function body ---------*)
@@ -326,15 +326,15 @@ let generate_logged_enter loc arg_ids ctx newctx tag_id_option sbody =
     | Mode_logged ->
       let mk_binding x = Printf.sprintf "{key: \"%s\", val: %s}" x x in
       let bindings = 
-      match tag_id_option with
-       | None -> Printf.sprintf "[%s]" (show_list ", " (List.map mk_binding arg_ids))
-       | Some tid ->
+        match tag_id_option with
+        | None -> Printf.sprintf "[%s]" (show_list ", " (List.map mk_binding arg_ids))
+        | Some tid ->
           let tid_binding =
             Printf.sprintf "{key: \"%s\", val: \"%s\"}" "_tag_id_" (str_replace_sub "%" "%%" tid) in
           Printf.sprintf "[%s]" (show_list ", " (tid_binding::(List.map mk_binding arg_ids)))
       in
       let sintro = Printf.sprintf "var %s = ctx_push(%s, %s);@,log_event(%s, %s, \"enter\");@,"
-        newctx ctx bindings token_loc newctx in
+          newctx ctx bindings token_loc newctx in
       ("", "", sintro)
   in
   let args = String.concat ", " arg_ids in
@@ -350,7 +350,7 @@ let generate_logged_return loc ctx sbody =
   match !current_mode with
   | Mode_cmi -> assert false
   | Mode_unlogged _ | Mode_pseudo _ ->
-     Printf.sprintf "@[<hv 2>%sreturn (@,%s);%s@]" token_start sbody token_stop
+    Printf.sprintf "@[<hv 2>%sreturn (@,%s);%s@]" token_start sbody token_stop
   | Mode_logged ->
     let id = id_fresh "_return_" in
     Printf.sprintf "var %s = %s;@,log_event(%s, ctx_push(%s, [{key: \"#RETURN_VALUE#\", val: %s}]), \"return\");@,return (%s); "

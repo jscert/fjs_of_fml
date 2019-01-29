@@ -13,8 +13,8 @@ let ident_builtin_attributes =
 
 let rec extract_attrs attrs =
   attrs
-    |> List.map extract_attr
-    |> List.flatten
+  |> List.map extract_attr
+  |> List.flatten
 
 and extract_attr (identifier, pl) =
   if identifier.txt = "f" then extract_payload pl else []
@@ -47,7 +47,7 @@ and extract_structure_item si = match si.pstr_desc with
   | Pstr_include    _    -> error "An expression was expected but an include declaration was found"
   | Pstr_attribute  _    -> error "An expression was expected but an attribute was found"
   | Pstr_extension (_,_) -> error "An expression was expected but an extension statement. was found"
-  
+
 and extract_expression e = match e.pexp_desc with
   | Pexp_ident       i          -> [String.concat "." @@ Longident.flatten @@ i.txt]
   | Pexp_constant    c          -> [extract_constant c]
