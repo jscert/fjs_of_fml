@@ -1,4 +1,4 @@
-true: package(str), package(compiler-libs.common)
+true: package(str), package(compiler-libs.common), package(visitors.ppx), package(visitors.runtime), package(ppx_import)
 
 # Generate cmt type information files
 true: bin_annot
