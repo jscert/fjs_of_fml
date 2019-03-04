@@ -27,9 +27,9 @@ val ppf_let_record : string list -> string -> string
 val ppf_array : string -> string
 val ppf_tuple : string -> string
 val ppf_sequence : string -> string -> string
-val ppf_while : string -> string -> string
+(*val ppf_while : string -> string -> string
 val ppf_for :
-  string -> string -> string -> Asttypes.direction_flag -> string -> string
+  string -> string -> string -> Asttypes.direction_flag -> string -> string*)
 val ppf_cstr : string -> string -> string option
 val ppf_cstrs : string -> string -> string -> Params.generate_mode -> string
 val ppf_cstrs_fct : string -> string list -> string

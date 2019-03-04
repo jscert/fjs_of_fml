@@ -54,7 +54,7 @@ let ppf_tuple = ppf_array
 let ppf_sequence exp1 exp2 =
   Printf.sprintf "%s;@,%s"
     exp1 exp2
-
+(*
 let ppf_while cd body =
   let s =
     Printf.sprintf "@[<v 2>while(%s) {@;<1 2>%s@,@]}"
@@ -72,6 +72,7 @@ let ppf_for id start ed flag body =
     Printf.sprintf "@[<v 2>for (%s = %s ; %s %s %s ; %s%s) {@,%s@]@,}"
       id start id (fl_to_symbl flag) ed (fl_to_string flag) id body
   in ppf_lambda_wrap s
+*)
 
 (*let ppf_single_cstr tag =
   Printf.sprintf "%s"
