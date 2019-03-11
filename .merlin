@@ -2,5 +2,6 @@ S src
 S src/stdlib_ml
 
 B _build/src
+B _build/src/stdlib_ml
 
-PKG compiler-libs
+PKG compiler-libs str
