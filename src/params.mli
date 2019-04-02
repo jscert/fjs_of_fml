@@ -1,4 +1,5 @@
 val debug : bool ref
+val dev : bool ref
 val ( ~~ ) : ('a -> 'b -> 'c) -> 'b -> 'a -> 'c
 type generate_token_flag = TokenTrue | TokenFalse
 type generate_mode =

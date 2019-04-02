@@ -1,5 +1,7 @@
 let debug = ref false
 
+let dev = ref false
+
 let (~~) f x y = f y x
 
 (****************************************************************)

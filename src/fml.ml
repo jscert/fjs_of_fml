@@ -1,4 +1,7 @@
 open Typedtree
+open Mytools
+
+(* Types  *)
 
 type fml_expression =
   { exp_desc: fml_expression_desc;
@@ -66,8 +69,8 @@ and fml_pattern_desc =
   | Tpat_array | Tpat_or of pattern  | Tpat_lazy *)
 
 and fml_record_label_definition =
-  | MiniKept of Types.type_expr
-  | MiniOverridden of Longident.t Location.loc * fml_expression
+  | Kept of Types.type_expr
+  | Overridden of Longident.t Location.loc * fml_expression
 
 and fml_case =
     {
@@ -76,6 +79,27 @@ and fml_case =
      c_rhs: fml_expression;
     }
 
+and fml_structure_item =
+  { str_desc : fml_structure_item_desc;
+    str_loc : Location.t;
+    str_env : Env.t
+  }
+
+and fml_structure_item_desc =
+  | Fml_tstr_eval of fml_expression
+  | Fml_tstr_value of fml_value_binding list
+  | Fml_tstr_type of Asttypes.rec_flag * fml_type_declaration list
+  | Fml_attribute of Typedtree.attribute
+  | Fml_tstr_open of Typedtree.open_description
+
+and fml_type_declaration = 
+ { ftyp_name : string Location.loc;
+   ftyp_type : Types.type_declaration;
+ }
+
+and fml_type_kind = Fml_t_variant of Typedtree.constructor_declaration list
+
+(* Conversion  *)
 let rec ml2fml_exp_desc = function
  | Texp_ident (path, ident, _) -> Exp_ident (path, ident)
  | Texp_constant c -> Exp_constant c
@@ -85,7 +109,7 @@ let rec ml2fml_exp_desc = function
     Exp_function { arg_label; param ; cases = List.map ml2fml_case cases; partial}
  | Texp_apply (e, l) ->
     Exp_apply (ml2fml_exp e, List.map (fun (al, eop) -> (al, ml2fml_exp_option eop)) l)
- | Texp_match (e, l, [], Total) -> Exp_match (ml2fml_exp e, l)
+ | Texp_match (e, l, [], Total) -> Exp_match (ml2fml_exp e, List.map ml2fml_case l)
  | Texp_tuple l -> Exp_tuple (List.map ml2fml_exp l)
  | Texp_construct (i, cd, l) -> Exp_construct (i, cd, List.map ml2fml_exp l)
  | Texp_record { fields; extended_expression } ->
@@ -135,11 +159,43 @@ and ml2fml_exp_option = function
  | Some e -> Some (ml2fml_exp e)
 
 and ml2fml_record_label_definition = function
- | Typedtree.Kept te -> MiniKept te
- | Typedtree.Overridden (i, e) -> MiniOverridden (i, ml2fml_exp e)
+ | Typedtree.Kept te -> Kept te
+ | Typedtree.Overridden (i, e) -> Overridden (i, ml2fml_exp e)
 
 and ml2fml_case { c_lhs; c_guard; c_rhs } =
  { c_lhs = ml2fml_pattern c_lhs;
    c_guard = ml2fml_exp_option c_guard;
    c_rhs = ml2fml_exp c_rhs
  }
+
+and ml2fml_structure_item (si : Typedtree.structure_item) =
+ { str_desc = ml2fml_structure_item_desc si.str_desc;
+   str_loc = si.str_loc;
+   str_env = si.str_env }
+
+and ml2fml_structure_item_desc = 
+  let loc = Location.none in
+  function
+  | Tstr_eval (e, _) -> Fml_tstr_eval (ml2fml_exp e)
+  | Tstr_value (_, vb_l) -> Fml_tstr_value (List.map ml2fml_value_binding vb_l)
+  | Tstr_type (rf, td_l) -> Fml_tstr_type (rf, List.map ml2fml_type_declaration td_l)
+  | Tstr_attribute a -> Fml_attribute a
+  | Tstr_open _ -> out_of_scope loc "open" (* TODO/FIXME : CHECKME  *)
+  | Tstr_modtype _ -> out_of_scope loc "modtype" (* TODO/FIXME : CHECKME  *)
+  | Tstr_module     _  -> out_of_scope loc "modules"
+  | Tstr_primitive  _  -> out_of_scope loc "primitive functions"
+  | Tstr_typext     _  -> out_of_scope loc "type extensions"
+  | Tstr_exception  _  -> out_of_scope loc "exceptions"
+  | Tstr_recmodule  _  -> out_of_scope loc "recursive modules"
+  | Tstr_class      _  -> out_of_scope loc "objects"
+  | Tstr_class_type _  -> out_of_scope loc "class types"
+  | Tstr_include    _  -> out_of_scope loc "includes"
+
+and ml2fml_type_declaration (td : Typedtree.type_declaration) : fml_type_declaration = 
+  { ftyp_name = td.typ_name;
+    ftyp_type = td.typ_type;
+  }
+
+and ml2fml_type_kind = function
+  | Ttype_variant cd_l -> Fml_t_variant cd_l
+  | _ -> assert false

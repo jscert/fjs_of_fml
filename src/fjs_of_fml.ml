@@ -69,7 +69,8 @@ let _ =
       ("-debug", Arg.Set debug, "trace the various steps");
       ("-dsource", Arg.Set Clflags.dump_source, "dump source after ppx");
       ("-ppx", Arg.String (add_to_list Clflags.all_ppx (* TODO Compenv.first_ppx *) ), "load ppx");
-      ("-mode", Arg.String (fun s -> set_current_mode s), "current mode: unlog, log, or token")
+      ("-mode", Arg.String (fun s -> set_current_mode s), "current mode: unlog, log, or token");
+      ("-dev", Arg.Set dev, "js_of_ast2");
     ]
     (fun f -> files := f :: !files)
     ("usage: [-I dir] [..other options..] file.ml");
@@ -127,7 +128,10 @@ let _ =
 
   let (parsetree, (typedtree,_), module_name) = process_implementation_file ppf sourcefile prefix_path in
   if !current_mode <> Mode_cmi then begin
-    let out, url_str = Js_of_ast.to_javascript prefix_file module_name typedtree in
+    let out, url_str = 
+      if not !dev then Js_of_ast.to_javascript prefix_file module_name typedtree else
+        Js_of_ast2.to_javascript prefix_file module_name typedtree
+    in
     file_put_contents output_file out;
     if url_str <> "" then file_put_contents url_output ("const url_root = \"" ^ url_str ^ "\";") else ();
     if !current_mode = (Mode_unlogged TokenTrue) 
