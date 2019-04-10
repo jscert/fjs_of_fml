@@ -49,3 +49,5 @@ let monadic_expr e = Exp.attr e ({ txt = attr_tag; loc = e.pexp_loc }, PStr [])
 let is_monadic_attr ({ txt = a; _ }, _) = a = attr_tag
 let is_monadic_expr e = List.exists is_monadic_attr e.pexp_attributes
 let is_monadic_texpr e = List.exists is_monadic_attr e.exp_attributes
+
+let is_monadic_fml_texpr (e: Fml.fml_expression) = List.exists is_monadic_attr e.exp_attributes

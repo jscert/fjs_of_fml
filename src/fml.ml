@@ -23,13 +23,13 @@ and fml_expression_desc =
 (*| Exp_try *)
   | Exp_tuple of fml_expression list 
   | Exp_construct of Longident.t Asttypes.loc  *
-  Types.constructor_description * fml_expression list 
+     Types.constructor_description * fml_expression list 
 (*| Exp_variant *)
   | Exp_record of
-  {
-  fields: (Types.label_description * fml_record_label_definition) array ;
-  (*representation: Types.record_representation ;*)
-  extended_expression: fml_expression option } 
+    { fields: (Types.label_description * fml_record_label_definition) array ;
+      (*representation: Types.record_representation ;*)
+      extended_expression: fml_expression option
+    } 
   | Exp_field of fml_expression * (*Longident.t Asttypes.loc  *)
   Types.label_description 
 (*| Exp_setfield *)
@@ -39,10 +39,10 @@ and fml_expression_desc =
 (*| Exp_while of fml_expression * fml_expression 
   | Exp_for of Ident.t * Parsetree.pattern * fml_expression * fml_expression *
   Asttypes.direction_flag * fml_expression 
-| Exp_send | Exp_new | Exp_instvar | Exp_setinstvar | Exp_override | Exp_letmodule *)
+  | Exp_send | Exp_new | Exp_instvar | Exp_setinstvar | Exp_override | Exp_letmodule 
   | Exp_letexception of extension_constructor * fml_expression 
-(*| Exp_assert | Exp_lazy | Exp_object | Exp_pack *)
-  | Exp_unreachable
+  | Exp_assert | Exp_lazy | Exp_object | Exp_pack 
+  | Exp_unreachable*)
 
 and fml_value_binding =
   {
@@ -65,7 +65,12 @@ and fml_pattern_desc =
   | Pat_any
   | Pat_var of Ident.t
   | Pat_tuple of fml_pattern list
-(*| Tpat_alias | Tpat_constant | Tpat_construct | Tpat_variant | Tpat_record
+  | Pat_constant of Asttypes.constant
+  | Pat_construct of Longident.t Location.loc *
+     Types.constructor_description * fml_pattern list
+  | Pat_record of (Longident.t Location.loc * Types.label_description * fml_pattern) list *
+        Asttypes.closed_flag 
+(*| Tpat_alias | Tpat_constant | Tpat_construct | Tpat_variant 
   | Tpat_array | Tpat_or of pattern  | Tpat_lazy *)
 
 and fml_record_label_definition =
@@ -79,16 +84,22 @@ and fml_case =
      c_rhs: fml_expression;
     }
 
+and fml_structure =
+  { fstr_items : fml_structure_item list;
+    fstr_type : Types.signature;
+    fstr_final_env : Env.t;
+  }
+
 and fml_structure_item =
-  { str_desc : fml_structure_item_desc;
-    str_loc : Location.t;
-    str_env : Env.t
+  { fstr_desc : fml_structure_item_desc;
+    fstr_loc : Location.t;
+    fstr_env : Env.t
   }
 
 and fml_structure_item_desc =
   | Fml_tstr_eval of fml_expression
   | Fml_tstr_value of fml_value_binding list
-  | Fml_tstr_type of Asttypes.rec_flag * fml_type_declaration list
+  | Fml_tstr_type of  fml_type_declaration list
   | Fml_attribute of Typedtree.attribute
   | Fml_tstr_open of Typedtree.open_description
 
@@ -128,7 +139,7 @@ let rec ml2fml_exp_desc = function
  | Texp_try (_, _)|Texp_variant (_, _)  |Texp_setfield (_, _, _, _)
  | Texp_send (_, _, _)|Texp_new (_, _, _)| Texp_instvar (_, _, _)|Texp_setinstvar (_, _, _, _)
  |Texp_override (_, _)| Texp_letmodule (_, _, _, _) |Texp_assert _|Texp_lazy _
- |Texp_object (_, _)|Texp_pack _ -> assert false
+ |Texp_object (_, _)|Texp_pack _ -> let loc = Location.none in out_of_scope loc "exp_desc"
 
 and  ml2fml_exp { exp_desc; exp_loc; exp_extra; exp_type; exp_env; exp_attributes }
  =
@@ -152,7 +163,18 @@ and ml2fml_pattern   { pat_desc; pat_loc; pat_extra;  pat_type; pat_env; pat_att
 and ml2fml_pattern_desc = function
  | Tpat_any -> Pat_any
  | Tpat_var (i, _) -> Pat_var i
- | _ -> assert false
+ | Tpat_constant c -> Pat_constant c
+ | Tpat_construct (i, cd, pl) ->
+    Pat_construct (i, cd, List.map ml2fml_pattern pl)
+ | Tpat_record (l, cf) ->
+    Pat_record (List.map (fun (lil, ld, p) -> (lil, ld, ml2fml_pattern p)) l, cf)
+ | Tpat_tuple l -> Pat_tuple (List.map ml2fml_pattern l)
+ | Tpat_alias _ -> out_of_scope Location.none "alias in let"
+ | Tpat_variant _ -> out_of_scope Location.none "variant in let"
+ | Tpat_array _ -> out_of_scope Location.none "array in let"
+ | Tpat_or _ -> out_of_scope Location.none "or in let"
+ | Tpat_lazy _ -> out_of_scope Location.none "lazy"
+
 
 and ml2fml_exp_option = function
  | None -> None
@@ -169,16 +191,16 @@ and ml2fml_case { c_lhs; c_guard; c_rhs } =
  }
 
 and ml2fml_structure_item (si : Typedtree.structure_item) =
- { str_desc = ml2fml_structure_item_desc si.str_desc;
-   str_loc = si.str_loc;
-   str_env = si.str_env }
+ { fstr_desc = ml2fml_structure_item_desc si.str_desc;
+   fstr_loc = si.str_loc;
+   fstr_env = si.str_env }
 
 and ml2fml_structure_item_desc = 
   let loc = Location.none in
   function
   | Tstr_eval (e, _) -> Fml_tstr_eval (ml2fml_exp e)
   | Tstr_value (_, vb_l) -> Fml_tstr_value (List.map ml2fml_value_binding vb_l)
-  | Tstr_type (rf, td_l) -> Fml_tstr_type (rf, List.map ml2fml_type_declaration td_l)
+  | Tstr_type (_, td_l) -> Fml_tstr_type (List.map ml2fml_type_declaration td_l)
   | Tstr_attribute a -> Fml_attribute a
   | Tstr_open _ -> out_of_scope loc "open" (* TODO/FIXME : CHECKME  *)
   | Tstr_modtype _ -> out_of_scope loc "modtype" (* TODO/FIXME : CHECKME  *)
@@ -198,4 +220,10 @@ and ml2fml_type_declaration (td : Typedtree.type_declaration) : fml_type_declara
 
 and ml2fml_type_kind = function
   | Ttype_variant cd_l -> Fml_t_variant cd_l
-  | _ -> assert false
+  | _ -> let loc = Location.none in out_of_scope loc "type_kind"
+
+and ml2fml_structure (s : Typedtree.structure) : fml_structure = 
+  { fstr_items = List.map ml2fml_structure_item s.str_items; 
+    fstr_type = s.str_type;
+    fstr_final_env = s.str_final_env;
+  }

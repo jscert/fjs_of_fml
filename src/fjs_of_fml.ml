@@ -130,11 +130,11 @@ let _ =
   if !current_mode <> Mode_cmi then begin
     let out, url_str = 
       if not !dev then Js_of_ast.to_javascript prefix_file module_name typedtree else
-        Js_of_ast2.to_javascript prefix_file module_name typedtree
+        Js_of_fml.to_javascript prefix_file module_name typedtree
     in
     file_put_contents output_file out;
     if url_str <> "" then file_put_contents url_output ("const url_root = \"" ^ url_str ^ "\";") else ();
     if !current_mode = (Mode_unlogged TokenTrue) 
     then generate_mlloc_file()
   end;
-  Printf.printf "Wrote %s\n" output_file
+  Printf.printf "Wrote %s\n" output_file 

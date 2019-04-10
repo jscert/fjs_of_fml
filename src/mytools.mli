@@ -35,17 +35,17 @@ val add_to_list : 'a list ref -> 'a -> unit
 val str_cmp : string -> string -> int
 val str_starts_with : string -> string -> bool
 val str_replace : char -> char -> string -> string
-val str_replace_sub : string -> string -> string -> string 
+val str_replace_sub : string -> string -> string -> string
 val cutlines : int -> string -> string
 val make_upper : string -> string
 val make_upper_2 : string -> string
+val format_comment : string -> string
 val file_put_contents : string -> string -> unit
 val output_endline : out_channel -> string -> unit
 val gives_not_found : (unit -> 'a) -> bool
 val lin0 : string
 val lin1 : string
 val lin2 : string
-val show_list : ('a -> string) -> string -> 'a list -> string
 val show_listp : ('a -> string) -> string -> 'a list -> string
 val show_listq : ('a -> string) -> string -> 'a list -> string
 val show_option : ('a -> string) -> 'a option -> string
@@ -57,6 +57,8 @@ val zip : 'a list -> 'a list -> ('a * 'a) list
 val unzip : ('a * 'b) list -> 'a list * 'b list
 val string_fold_lefti : ('a -> int -> char -> 'a) -> 'a -> string -> 'a
 val string_fold_righti : (int -> char -> 'a -> 'a) -> string -> 'a -> 'a
+val combine_list_output : (string * 'a list) list -> string * 'a list
+val string_of_longident : Longident.t -> string
 val output : string -> unit
 val unsupported : ?loc:Location.t -> string -> 'a
 val out_of_scope : Location.t -> string -> 'a

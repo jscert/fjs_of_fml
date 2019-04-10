@@ -203,6 +203,8 @@ let make_upper_2 s =
     Bytes.set s' 1 (Char.uppercase_ascii (Bytes.get s' 1));
     Bytes.to_string s'
 
+ let format_comment c = str_replace_sub "%" "%%" (str_replace '\\' '|' c)
+
 (**************************************************************)
 (** File manipulation functions *)
 
@@ -288,6 +290,16 @@ let string_fold_righti f s acc =
     else f i s.[i] (aux f (succ i) acc)
   in aux f 0 acc
 
+(* takes a list of pairs made of: list of strings, and list of strings,
+   and return a pair of a string (the string concat with newlines of the fst strings),
+   and a list of strings (the list flatten of the snd strings) *)
+
+let combine_list_output args =
+  let (strs,bss) = List.split args in
+  (show_list "@,@," strs), (List.flatten bss)
+
+let string_of_longident i =
+  String.concat "." @@ Longident.flatten @@ i
 
 (**************************************************************)
 (** Error messages *)

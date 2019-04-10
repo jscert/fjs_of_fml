@@ -25,39 +25,8 @@ open Monadic_binder_list
 open Parsetree
 open Ppf_helpers
 
-let string_of_longident i =
-  String.concat "." @@ Longident.flatten @@ i
-
-
-(****************************************************************)
-(* SHADOWING CHECKER *)
-
-module ShadowMapM = Stdlib_fml.Map.Make(String)
-
-type shadow_map = int ShadowMapM.t
-let increment_sm sm id =
-  ShadowMapM.update id (option_app (Some 0) (fun i -> Some (i+1))) sm
-
-(* Checks if ident is defined in env, and thus would shadow if redefined. *)
-let ident_is_shadowing env str_ident =
-  try ignore (Env.lookup_value (Longident.Lident str_ident) env);
-    true
-  with Not_found -> false
-
-(* If the identifier is shadowing another, then update shadow map *)
-let update_shadow_map sm env id =
-  let str_id = Ident.name id in
-  if ident_is_shadowing env str_id then increment_sm sm str_id else sm
-
-
 (****************************************************************)
 (* RECOGNIZING EXPRESSIONS *)
-
-let is_sbool x = List.mem x ["true" ; "false"]
-
-let is_unit x = x = "()"
-
-let unit_repr = "{}"
 
 (* Given an expression, check whether it is a primitive type or a constructed type *)
 let exp_type_is_constant exp =
@@ -74,12 +43,6 @@ let is_infix f args = match args with
       x.exp_loc.loc_start.pos_lnum < f.exp_loc.loc_start.pos_lnum ||
       (x.exp_loc.loc_start.pos_lnum = f.exp_loc.loc_start.pos_lnum &&
        x.exp_loc.loc_start.pos_cnum < f.exp_loc.loc_start.pos_cnum)
-
-let map_cstr_fields ?loc (sm : shadow_map) bind cstr elements =
-  let fields = extract_cstr_attrs cstr in
-  try map_opt_state2 bind sm fields elements
-  with Invalid_argument _ ->
-    error ?loc ("Insufficient fieldnames for arguments to " ^ cstr.cstr_name)
 
 (** Decomposition of functions *)
 
@@ -191,124 +154,8 @@ let is_coercion_constructor lident =
   (* if (is_mode_pseudo()) then Printf.printf "%s %s\n" x (if b then " [yes]" else ""); *)
   b
 
-(****************************************************)
-(* Identifier Rewriting *)
-(* List of JavaScript keywords that cannot be used as identifiers *)
-let js_keywords =
-  ["await"; "break"; "case"; "catch"; "class"; "const"; "continue"; "debugger"; "default"; "delete"; "do"; "else";
-   "export"; "extends"; "finally"; "for"; "function"; "if"; "import"; "in"; "instanceof"; "new"; "return"; "super";
-   "switch"; "this"; "throw"; "try"; "typeof"; "var"; "void"; "while"; "with"; "yield"; "enum"]
-
-(** Conversion between integers and unicode \mathbb strings *)
-(* 0-9 as unicode \mathbb{d} multibyte character strings *)
-let ustr_bb_digits = Array.init 10 (fun i -> Printf.sprintf "\xf0\x9d\x9F%c" (char_of_int (0x98 + i)))
-
-(** Converts an integer into an array of decimal digits *)
-let int_to_array = function
-  | 0 -> [0]
-  | i -> let rec f i acc = if i = 0 then acc else f (i/10) (i mod 10 :: acc) in f i []
-
-(** Converts an integer i into a unicode string representation of \mathbb{i} *)
-let int_to_bb_ustr i = String.concat "" (List.map (fun d -> ustr_bb_digits.(d)) (int_to_array i))
-
-(* On with the variable name mangling *)
-
-let ppf_ident_name x sm =
-  let x' =
-    if List.mem x js_keywords then
-      (* Variable name clashes with JS keyword: prefix with a \mathbb{V} character (\u1d54d) *)
-      "\xf0\x9d\x95\x8d" ^ x
-    else
-      (* Variable name contains ' (not supported by JS): replace with unicode prime symbol (\u02b9) *)
-      Str.global_replace (Str.regexp "'") "\xca\xb9" x
-  in (* Append digits to handle non-shadowed ML variables that become shadowed in JS scopes *)
-  option_app x' (fun i -> x' ^ (int_to_bb_ustr i)) (ShadowMapM.find_opt x sm)
-
-(** Returns the JS version of the Ident name *)
-let ppf_ident id sm =
-  ppf_ident_name (Ident.name id) sm
-
-(****************************************************************)
-(* CONTEXTS *)
-
-(** Fresh name generator for contexts *)
-
-let ctx_fresh =
-  let r = ref 0 in
-  fun () -> (incr r; "ctx_" ^ string_of_int !r)
-
-let ctx_initial =
-  "ctx_empty"
-
-(****************************************************************)
-(* DESTINATIONS *)
-
-(** Destination-style translation of expressions *)
-
-type dest =
-  | Dest_ignore
-  | Dest_return
-  | Dest_assign of string * bool (* bool indicates shadowing *)
-  | Dest_inline
-
-let apply_dest loc ctx dest sbody =
-  match dest with
-  | Dest_ignore -> sbody
-  | Dest_return -> generate_logged_return loc ctx sbody
-  | Dest_assign (id,s) -> Printf.sprintf "%s%s = %s;" (if s then "" else "var ") id sbody
-  | Dest_inline -> sbody
-
-(* LATER: pull out the "var" out of switch *)
-
-exception Not_good_for_dest_inline
-
-let reject_inline dest =
-  if dest = Dest_inline
-  then raise Not_good_for_dest_inline
-
-
 (****************************************************************)
 (* HELPER FUNCTIONS *)
-
-and js_of_constant = function
-  | Const_int       n     -> string_of_int n
-  | Const_char      c     -> String.make 1 c
-  | Const_string   (s, _) -> "\"" ^ (String.escaped (String.escaped s)) ^ "\"" (* Warning: 2 levels of printf *)
-  | Const_float     f     -> f
-  | Const_int32     n     -> Int32.to_string n
-  | Const_int64     n     -> Int64.to_string n
-  | Const_nativeint n     -> Nativeint.to_string n
-
-let js_of_path_longident sm path ident =
-  match String.concat "." @@ Longident.flatten ident.txt with
-  (* for unit: *)
-  | "()"  -> unit_repr
-  (* for bool: *)
-  | "&&"  -> "&&"
-  | "||"  -> "||"
-  (* for float: *)
-  | "="  -> "=="
-  | "+."  -> "+"
-  | "*."  -> "*"
-  | "-."  -> "-"
-  | "~-." -> "-"
-  | "/."  -> "/"
-  | "<"   -> "<"
-  | ">"   -> ">"
-  | "<="   -> "<="
-  | ">="   -> ">="
-  (* for int: *)
-  | "+"  -> "+"
-  | "*"  -> "*"
-  | "-"  -> "-"
-  | "/"  -> "/"
-  (* for string *)
-  | "^"   -> "+" (* !!TODO: we want to claim ability to type our sublanguage, so we should not use this *)
-  | res   ->
-    let res = 
-      if !generate_qualified_names && Path.name path <> "Stdlib_fml"
-      then ppf_path path else res in
-    ppf_ident_name res sm
 
 let is_triple_equal_comparison e sm =
   match e.exp_desc with
@@ -322,15 +169,6 @@ let ppf_ident_of_pat sm pat = match pat.pat_desc with
   | Tpat_var (id, _) -> ppf_ident id sm
   | Tpat_any         -> id_fresh "_pat_any_"
   | _ -> error ~loc:pat.pat_loc "functions can't deconstruct values"
-
-
-(* takes a list of pairs made of: list of strings, and list of strings,
-   and return a pair of a string (the string concat with newlines of the fst strings),
-   and a list of strings (the list flatten of the snd strings) *)
-
-let combine_list_output args =
-  let (strs,bss) = List.split args in
-  (show_list "@,@," strs), (List.flatten bss)
 
 (* returns a pair (x,e), where [x] in the name in [pat]
    and where [e] is the access to "stupleobj[index]" *)
@@ -354,7 +192,6 @@ let tuple_binders stupleobj sm pl =
 
 let ocaml_doc_tags = [ "ocaml.text" ; "ocaml.doc" ]
 let is_doc_attr ({ txt = a; _ }, _) = List.mem a ocaml_doc_tags
-(*let is_doc_expr e = List.exists is_doc_attr e.pexp_attributes*)
 let is_doc_texpr e = List.exists is_doc_attr e.exp_attributes
 
 (****************************************************************)
@@ -411,6 +248,7 @@ and js_of_structure_item s =
   | Tstr_eval (e, _)     -> 
     let str = Printf.sprintf "%s" @@ js_of_expression ShadowMapM.empty ctx_initial Dest_ignore None e in
     (str, [], None)
+
   | Tstr_value (_, vb_l) ->
     let comment vb = 
       try 
@@ -441,6 +279,7 @@ and js_of_structure_item s =
           let s = ppf_value id sbody (fst comm) in          
           (s, [id]))) in
     (str, str_list, !tag)
+
   | Tstr_type (rec_flag, decls) ->
     let str, str_list = combine_list_output (~~ List.map decls (fun decl -> 
         match decl.typ_type.type_kind with
@@ -459,6 +298,7 @@ and js_of_structure_item s =
         | _ -> ("", [])
       )) in
     (str, str_list, None)
+
   | Tstr_open       _  -> ("",[], None) (* Handle modules by use of multiple compilation/linking *)
   | Tstr_modtype    _  -> ("",[], None)
   | Tstr_module     b  -> out_of_scope loc "modules" (* Partial implementation present in commit e1e6e4b *)
