@@ -708,6 +708,8 @@ let js_of_fml_structure_item s  =
 
  | Fml_tstr_open _ -> out_of_scope loc "Fml_tstr_open"
 
+ | Fml_tstr_modtype -> out_of_scope loc "Fml_tstr_modtype"
+
 (*
  * Get url from items
  *)

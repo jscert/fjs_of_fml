@@ -73,6 +73,7 @@ and fml_structure_item_desc =
   | Fml_tstr_type of fml_type_declaration list
   | Fml_attribute of Typedtree.attribute
   | Fml_tstr_open of Typedtree.open_description
+  | Fml_tstr_modtype
 and fml_type_declaration = {
   ftyp_name : string Location.loc;
   ftyp_type : Types.type_declaration;

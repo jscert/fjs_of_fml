@@ -102,6 +102,7 @@ and fml_structure_item_desc =
   | Fml_tstr_type of  fml_type_declaration list
   | Fml_attribute of Typedtree.attribute
   | Fml_tstr_open of Typedtree.open_description
+  | Fml_tstr_modtype
 
 and fml_type_declaration = 
  { ftyp_name : string Location.loc;
@@ -202,8 +203,8 @@ and ml2fml_structure_item_desc =
   | Tstr_value (_, vb_l) -> Fml_tstr_value (List.map ml2fml_value_binding vb_l)
   | Tstr_type (_, td_l) -> Fml_tstr_type (List.map ml2fml_type_declaration td_l)
   | Tstr_attribute a -> Fml_attribute a
-  | Tstr_open _ -> out_of_scope loc "open" (* TODO/FIXME : CHECKME  *)
-  | Tstr_modtype _ -> out_of_scope loc "modtype" (* TODO/FIXME : CHECKME  *)
+  | Tstr_open od -> Fml_tstr_open od
+  | Tstr_modtype mtd -> Fml_tstr_modtype
   | Tstr_module     _  -> out_of_scope loc "modules"
   | Tstr_primitive  _  -> out_of_scope loc "primitive functions"
   | Tstr_typext     _  -> out_of_scope loc "type extensions"
