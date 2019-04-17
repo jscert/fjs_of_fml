@@ -123,6 +123,7 @@ type dest =
 val apply_dest : Location.t -> string -> dest -> string -> string
 exception Not_good_for_dest_inline
 val reject_inline : dest -> unit
+val exp_type_is_constant : Typedtree.expression -> bool
 val is_sbool : string -> bool
 val is_unit : string -> bool
 val unit_repr : string

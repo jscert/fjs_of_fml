@@ -1,4 +1,3 @@
-val exp_type_is_constant : Typedtree.expression -> bool
 val is_infix : Typedtree.expression -> Typedtree.expression list -> bool
 val function_get_args_and_body :
   Typedtree.expression -> Typedtree.pattern list * Typedtree.expression

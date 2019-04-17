@@ -28,11 +28,6 @@ open Ppf_helpers
 (****************************************************************)
 (* RECOGNIZING EXPRESSIONS *)
 
-(* Given an expression, check whether it is a primitive type or a constructed type *)
-let exp_type_is_constant exp =
-  List.exists (Ctype.matches exp.exp_env exp.exp_type)
-    [Predef.type_bool; Predef.type_int; Predef.type_char; Predef.type_string; Predef.type_float]
-
 let is_infix f args = match args with
   | _ :: [] | [] -> false
   | x :: xs ->

@@ -3,6 +3,7 @@ open Log
 open Asttypes
 open Params
 open Attributes
+open Typedtree
 
 module L = Logged (Token_generator) (struct let size = 256 end)
 
@@ -406,6 +407,11 @@ let reject_inline dest =
 
 (****************************************************************)
 (* RECOGNIZING EXPRESSIONS *)
+
+(* Given an expression, check whether it is a primitive type or a constructed type *)
+let exp_type_is_constant exp =
+  List.exists (Ctype.matches exp.exp_env exp.exp_type)
+    [Predef.type_bool; Predef.type_int; Predef.type_char; Predef.type_string; Predef.type_float]
 
 let is_sbool x = List.mem x ["true" ; "false"]
 
