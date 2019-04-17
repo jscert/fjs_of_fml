@@ -5,7 +5,6 @@ val is_triple_equal_type : Types.type_expr -> bool
 val is_infix : Fml.fml_expression -> Fml.fml_expression list -> bool
 val fml_function_get_args_and_body :
   Fml.fml_expression -> Fml.fml_pattern list * Fml.fml_expression
-val fml_exp_type_is_constant : Fml.fml_expression_desc -> bool
 val function_get_args_and_body :
   Fml.fml_expression -> Fml.fml_pattern list * Fml.fml_expression
 val is_ident : Fml.fml_expression -> bool

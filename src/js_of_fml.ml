@@ -48,8 +48,9 @@ let fml_function_get_args_and_body e =
   in
   aux [] e
 
-let fml_exp_type_is_constant = function
- | Exp_constant _ -> true | _ -> false
+let fml_exp_type_is_constant (exp : fml_expression) =
+   List.exists (Ctype.matches exp.exp_env exp.exp_type)
+    [Predef.type_bool; Predef.type_int; Predef.type_char; Predef.type_string; Predef.type_float]
 
 (** Decomposition of functions *)
 
@@ -523,7 +524,7 @@ let rec js_of_fml_expression (sm : shadow_map) ctx dest tag_id_option e =
      js_of_fml_exp_naming_argument_if_non_variable sm ctx e tag_id_option "_switch_arg_" in
     let sbranches =
      String.concat "@," (List.map (fun b -> js_of_branch sm ctx dest b tag_id_option sarg) l) in
-    let arg_is_constant = fml_exp_type_is_constant e.exp_desc in
+    let arg_is_constant = fml_exp_type_is_constant e in
     generate_logged_match loc ctx sintro sarg sbranches arg_is_constant
 
  | Exp_tuple l -> 
