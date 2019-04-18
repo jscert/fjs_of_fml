@@ -1,6 +1,6 @@
 MOCHA := node_modules/mocha/bin/mocha
-STDLIB_DIR := ../stdlib_fml
-BIN_DIR := ../..
+STDLIB_DIR := ../src/stdlib_fml
+BIN_DIR := ..
 PPX := -ppx $(BIN_DIR)/monad_ppx.byte
 LIBDIRS := lib $(STDLIB_DIR)
 LIBS := $(PPX) $(foreach lib,$(LIBDIRS),-I $(lib))
