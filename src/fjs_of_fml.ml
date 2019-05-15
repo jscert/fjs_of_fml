@@ -112,7 +112,7 @@ let _ =
     let outchannel = open_out mlloc_output in
     let put = output_endline outchannel in
     put "   lineof_temp = [];";
-    Js_of_ast.(
+    Js_of_fml.(
       ~~ Hashtbl.iter token_locs (fun key (pos_start,pos_stop) ->
           put (Printf.sprintf "   lineof_temp[%d] = [%d,%d,%d,%d];" 
                  key pos_start.pos_line pos_start.pos_col  
@@ -128,10 +128,7 @@ let _ =
 
   let (parsetree, (typedtree,_), module_name) = process_implementation_file ppf sourcefile prefix_path in
   if !current_mode <> Mode_cmi then begin
-    let out, url_str = 
-      if not !dev then Js_of_ast.to_javascript prefix_file module_name typedtree else
-        Js_of_fml.to_javascript prefix_file module_name typedtree
-    in
+    let out, url_str = Js_of_fml.to_javascript prefix_file module_name typedtree in
     file_put_contents output_file out;
     if url_str <> "" then file_put_contents url_output ("const url_root = \"" ^ url_str ^ "\";") else ();
     if !current_mode = (Mode_unlogged TokenTrue) 
